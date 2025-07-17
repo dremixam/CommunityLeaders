@@ -28,8 +28,9 @@ public class NetworkHandler {
                     // Restore player to normal mode (exit spectator mode)
                     player.changeGameMode(GameMode.SURVIVAL);
 
-                    // Confirmation message
-                    player.sendMessage(Text.literal("§aYou have accepted the server rules. Welcome!"), false);
+                    // Confirmation message from configuration
+                    String acceptedMessage = configManager.getRulesAcceptedMessage();
+                    player.sendMessage(Text.literal("§a" + acceptedMessage), false);
                 }
             });
         });

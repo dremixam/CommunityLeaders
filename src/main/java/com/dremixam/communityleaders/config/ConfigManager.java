@@ -197,6 +197,26 @@ public class ConfigManager {
         return "You must accept the rules to play on this server.";
     }
 
+    public String getRulesAcceptedMessage() {
+        // Check if using new message system
+        if (config.containsKey("messages")) {
+            Map<String, Object> messages = (Map<String, Object>) config.get("messages");
+            if (messages.containsKey("rules_accepted")) {
+                return (String) messages.get("rules_accepted");
+            }
+        }
+
+        // Fallback to old charter system for backward compatibility
+        if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            if (charter.containsKey("accepted")) {
+                return (String) charter.get("accepted");
+            }
+        }
+
+        return "You have accepted the server rules. Welcome!";
+    }
+
     // Legacy methods for backward compatibility - delegate to Rules methods
     public boolean isCharterEnabled() {
         return isRulesEnabled();
