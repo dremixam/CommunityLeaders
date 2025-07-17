@@ -47,8 +47,9 @@ dependencies {
     // LuckPerms API
     modCompileOnly 'net.luckperms:api:5.4'
 
-    // SnakeYAML for configuration files
+    // SnakeYAML for configuration files - include in the final JAR
     implementation 'org.yaml:snakeyaml:2.0'
+    include 'org.yaml:snakeyaml:2.0'
 
     // Gson for JSON handling (already included in Minecraft, but explicit for clarity)
     // implementation 'com.google.code.gson:gson:2.10.1'

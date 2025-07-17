@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ServerPlayNetworkHandler.class)
+@Mixin(value = ServerPlayNetworkHandler.class, priority = 900)
 public class ServerPlayNetworkHandlerMixin {
 
     @Shadow
@@ -19,8 +19,9 @@ public class ServerPlayNetworkHandlerMixin {
 
     /**
      * Intercepts packet sending to block world data if rules are not accepted
+     * Using a more specific method signature for better compatibility
      */
-    @Inject(method = "sendPacket(Lnet/minecraft/network/packet/Packet;)V", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "sendPacket", at = @At("HEAD"), cancellable = true, require = 0)
     private void interceptPacketSending(Packet<?> packet, CallbackInfo ci) {
         if (this.player != null && PlayerConnectionHandler.isAwaitingRules(this.player.getUuid())) {
 

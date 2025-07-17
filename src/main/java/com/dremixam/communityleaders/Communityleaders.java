@@ -10,6 +10,7 @@ import com.dremixam.communityleaders.events.PlayerConnectionHandler;
 import com.dremixam.communityleaders.network.NetworkHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,20 @@ public class Communityleaders implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        // Vérifier si on est côté serveur (pas en solo)
+        if (!FabricLoader.getInstance().getEnvironmentType().name().equals("SERVER")) {
+            LOGGER.info("Community Leaders disabled in single-player mode");
+            return;
+        }
+
+        // Vérifier si LuckPerms est disponible
+        try {
+            Class.forName("net.luckperms.api.LuckPermsProvider");
+        } catch (ClassNotFoundException e) {
+            LOGGER.warn("LuckPerms not found, Community Leaders will not function properly. Disabling mod.");
+            return;
+        }
+
         LOGGER.info("Initializing Community Leaders!");
 
         configManager = new ConfigManager();
