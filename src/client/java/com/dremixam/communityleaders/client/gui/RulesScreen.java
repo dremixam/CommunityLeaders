@@ -27,6 +27,10 @@ public class RulesScreen extends Screen {
     private int dragStartY = 0;
     private int dragStartScrollOffset = 0;
 
+    // Checkbox state preservation
+    private boolean hasReachedBottom = false;
+    private boolean isCheckboxChecked = false;
+
     public RulesScreen(String title, String content, String acceptBtn, String declineBtn, String checkboxTxt, String declineMsg) {
         super(Text.literal(title));
         this.rulesContent = content;
@@ -140,13 +144,24 @@ public class RulesScreen extends Screen {
 
         // "I accept" checkbox - centered in the window
         this.acceptCheckbox = new CheckboxWidget(centerX - 100, bottomY - 25, 200, 20,
-                Text.literal(checkboxText), false) {
+                Text.literal(checkboxText), isCheckboxChecked) {
             @Override
             public void onPress() {
                 super.onPress();
+                // Save checkbox state
+                isCheckboxChecked = this.isChecked();
+                // Button is active whenever checkbox is checked (regardless of scroll position)
                 acceptButton.active = this.isChecked();
             }
         };
+
+        // Restore checkbox state: active if has reached bottom before OR no scroll needed
+        this.acceptCheckbox.active = hasReachedBottom || (maxScrollOffset == 0);
+        // If no scroll needed, user has "reached bottom" by default
+        if (maxScrollOffset == 0) {
+            hasReachedBottom = true;
+        }
+
         this.addDrawableChild(acceptCheckbox);
 
         // "I accept" button - inside the window
@@ -474,9 +489,14 @@ public class RulesScreen extends Screen {
      * Update the checkbox state based on the current scroll position
      */
     private void updateCheckboxState() {
-        // Enable checkbox only when scrolled to the bottom
-        this.acceptCheckbox.active = (maxScrollOffset == 0 || scrollOffset >= maxScrollOffset);
-        // Button is active only if checkbox is both active and checked
-        this.acceptButton.active = this.acceptCheckbox.active && this.acceptCheckbox.isChecked();
+        // Check if user has reached the bottom (once reached, always stays true)
+        if (!hasReachedBottom && (maxScrollOffset == 0 || scrollOffset >= maxScrollOffset)) {
+            hasReachedBottom = true;
+            // Enable checkbox when bottom is reached for the first time
+            this.acceptCheckbox.active = true;
+        }
+
+        // Button is active whenever checkbox is checked (regardless of scroll position)
+        this.acceptButton.active = this.acceptCheckbox.isChecked();
     }
 }
