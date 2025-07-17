@@ -18,57 +18,57 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class InvitationManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private final File aDonnees;
-    private static final Type aTypeDonnees = new TypeToken<ConcurrentHashMap<UUID, List<UUID>>>() {}.getType();
+    private final File dataFile;
+    private static final Type dataType = new TypeToken<ConcurrentHashMap<UUID, List<UUID>>>() {}.getType();
 
-    private Map<UUID, List<UUID>> aInvitations;
+    private Map<UUID, List<UUID>> invitations;
 
     public InvitationManager(ConfigManager configManager) {
-        this.aDonnees = configManager.getConfigDirectory().resolve("invites.json").toFile();
-        chargerDonnees();
+        this.dataFile = configManager.getConfigDirectory().resolve("invites.json").toFile();
+        loadData();
     }
 
-    public void chargerDonnees() {
-        if (aDonnees.exists()) {
-            try (FileReader reader = new FileReader(aDonnees)) {
-                aInvitations = GSON.fromJson(reader, aTypeDonnees);
+    public void loadData() {
+        if (dataFile.exists()) {
+            try (FileReader reader = new FileReader(dataFile)) {
+                invitations = GSON.fromJson(reader, dataType);
             } catch (IOException e) {
                 e.printStackTrace();
-                aInvitations = new ConcurrentHashMap<>();
+                invitations = new ConcurrentHashMap<>();
             }
         } else {
-            aInvitations = new ConcurrentHashMap<>();
+            invitations = new ConcurrentHashMap<>();
         }
     }
 
-    public void sauvegarderDonnees() {
-        try (FileWriter writer = new FileWriter(aDonnees)) {
-            GSON.toJson(aInvitations, writer);
+    public void saveData() {
+        try (FileWriter writer = new FileWriter(dataFile)) {
+            GSON.toJson(invitations, writer);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void ajouterInvitation(UUID inviteur, UUID invite) {
-        aInvitations.computeIfAbsent(inviteur, k -> new ArrayList<>()).add(invite);
-        sauvegarderDonnees();
+    public void addInvitation(UUID inviter, UUID invited) {
+        invitations.computeIfAbsent(inviter, k -> new ArrayList<>()).add(invited);
+        saveData();
     }
 
-    public void retirerInvitation(UUID inviteur, UUID invite) {
-        if (aInvitations.containsKey(inviteur)) {
-            aInvitations.get(inviteur).remove(invite);
-            if (aInvitations.get(inviteur).isEmpty()) {
-                aInvitations.remove(inviteur);
+    public void removeInvitation(UUID inviter, UUID invited) {
+        if (invitations.containsKey(inviter)) {
+            invitations.get(inviter).remove(invited);
+            if (invitations.get(inviter).isEmpty()) {
+                invitations.remove(inviter);
             }
-            sauvegarderDonnees();
+            saveData();
         }
     }
 
-    public boolean aInvite(UUID inviteur, UUID invite) {
-        return aInvitations.containsKey(inviteur) && aInvitations.get(inviteur).contains(invite);
+    public boolean hasInvited(UUID inviter, UUID invited) {
+        return invitations.containsKey(inviter) && invitations.get(inviter).contains(invited);
     }
 
-    public List<UUID> obtenirInvites(UUID inviteur) {
-        return aInvitations.getOrDefault(inviteur, new ArrayList<>());
+    public List<UUID> getInvitedPlayers(UUID inviter) {
+        return invitations.getOrDefault(inviter, new ArrayList<>());
     }
 }

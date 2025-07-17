@@ -43,44 +43,61 @@ public class ConfigManager {
 
     private void createDefaultConfig() {
         String defaultConfig = """
-                # Configuration du mod Community Leaders
+                # Community Leaders Configuration
+                # Configuration for streamer invitation system and charter
                 
-                # Charte du serveur
+                # Charter system settings
                 charter:
                   enabled: true
-                  title: "Charte du Serveur"
+                  title: "Server Charter"
                   content: |
-                    Bienvenue sur notre serveur Minecraft !
+                    Welcome to our community server!
                     
-                    En rejoignant ce serveur, vous acceptez de respecter les règles suivantes :
+                    By playing on this server, you agree to follow these rules:
                     
-                    1. Respectez les autres joueurs et leurs constructions
-                    2. Pas de grief, de vol ou de destruction intentionnelle
-                    3. Pas de langage offensant ou de harcèlement
-                    4. Respectez les zones protégées et les propriétés privées
-                    5. Pas de triche, hack ou exploitation de bugs
-                    6. Écoutez et respectez les modérateurs et administrateurs
+                    1. Respect other players and their builds
+                    2. No griefing, stealing or intentional destruction
+                    3. No offensive language or harassment
+                    4. Respect protected areas and private properties
+                    5. No cheating, hacking or bug exploitation
+                    6. Listen to and respect moderators and administrators
                     
-                    Le non-respect de ces règles peut entraîner un avertissement,
-                    une suspension temporaire ou un bannissement permanent.
+                    Breaking these rules may result in a warning,
+                    temporary suspension or permanent ban.
                     
-                    Merci de contribuer à maintenir une communauté amicale !
-                  accept_button: "J'accepte"
-                  decline_button: "Je refuse"
-                  checkbox_text: "Je comprends et j'accepte la charte"
-                  decline_message: "Vous devez accepter la charte pour jouer sur ce serveur."
+                    Thank you for helping maintain a friendly community!
+                  accept_button: "I Accept"
+                  decline_button: "I Decline"
+                  checkbox_text: "I understand and accept the charter"
+                  decline_message: "You must accept the charter to play on this server."
                 
-                # Messages personnalisables
+                # Customizable messages
                 messages:
-                  invite_success: "%player% a été invité et ajouté à la liste blanche."
-                  invite_already_whitelisted: "Ce joueur est déjà sur la liste blanche."
-                  uninvite_success: "%player% n'est plus invité et a été retiré de la liste blanche."
-                  ban_success: "%player% a été banni et retiré de la liste blanche."
-                  player_not_found: "Le joueur %player% n'a pas été trouvé."
-                  no_permission: "Vous n'avez pas la permission d'utiliser cette commande."
-                  not_your_invite: "Vous ne pouvez pas agir sur ce joueur car vous ne l'avez pas invité."
-                  already_banned: "Ce joueur est déjà banni."
-                  ban_reason: "Banni par le streamer qui vous a invité."
+                  # General
+                  player_not_found: "Player '%player%' not found."
+                  no_permission: "You don't have permission to use this command."
+                  
+                  # Invite command
+                  invite_success: "Successfully invited '%player%' to the server!"
+                  invite_already_whitelisted: "Player '%player%' is already whitelisted."
+                  invite_error: "Error inviting player: %error%"
+
+                  # Uninvite command
+                  uninvite_success: "Successfully uninvited '%player%' from the server."
+                  uninvite_only_invited: "You can only uninvite players you invited yourself."
+                  uninvite_disconnect_message: "You have been uninvited from the server."
+                  uninvite_error: "Error uninviting player: %error%"
+
+                  # Ban command
+                  ban_success: "Successfully banned '%player%' from the server."
+                  ban_only_invited: "You can only ban players you invited yourself."
+                  ban_reason: "Banned by the streamer who invited you."
+                  ban_disconnect_message: "You have been banned from the server."
+                  ban_error: "Error banning player: %error%"
+                  
+                  # Charter system
+                  charter_accepted: "You have accepted the server charter. Welcome!"
+                  charter_sending_error: "Error sending charter: %error%"
                 """;
 
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {

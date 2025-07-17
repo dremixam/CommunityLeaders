@@ -14,42 +14,42 @@ public class PlayerConnectionHandler {
     private static ConfigManager configManager;
     private static CharterManager charterManager;
 
-    // Joueurs en attente d'acceptation de la charte
+    // Players waiting for charter acceptance
     private static final Set<UUID> playersAwaitingCharter = ConcurrentHashMap.newKeySet();
 
     public static void initialize(ConfigManager config, CharterManager charter) {
         configManager = config;
         charterManager = charter;
 
-        // Quand un joueur se connecte, vérifier s'il doit voir la charte
+        // When a player connects, check if they need to see the charter
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
             UUID playerId = player.getUuid();
 
-            // Vérifier si le joueur doit accepter la charte
+            // Check if the player needs to accept the charter
             if (shouldShowCharter(playerId)) {
-                // Marquer comme en attente - le mixin bloquera seulement l'interaction
+                // Mark as waiting - the mixin will only block interaction
                 playersAwaitingCharter.add(playerId);
 
-                // Mettre en mode spectateur temporaire pour que les autres joueurs ne le voient pas
+                // Put in temporary spectator mode so other players don't see them
                 player.changeGameMode(net.minecraft.world.GameMode.SPECTATOR);
 
-                // Envoyer la charte immédiatement, pendant que le chargement est en cours
+                // Send charter immediately, while loading is in progress
                 sendCharterToPlayer(player);
             }
         });
     }
 
-    // Vérifier si un joueur doit voir la charte
+    // Check if a player should see the charter
     public static boolean shouldShowCharter(UUID playerId) {
         if (!configManager.isCharterEnabled()) {
             return false;
         }
 
-        return !charterManager.aAccepteCharte(playerId);
+        return !charterManager.hasAcceptedCharter(playerId);
     }
 
-    // Envoyer la charte à un joueur
+    // Send charter to a player
     private static void sendCharterToPlayer(ServerPlayerEntity player) {
         if (player == null || player.networkHandler == null) {
             return;
@@ -67,29 +67,29 @@ public class PlayerConnectionHandler {
                     configManager.getCharterDeclineMessage()
                 );
             } catch (Exception e) {
-                System.err.println("Erreur lors de l'envoi de la charte : " + e.getMessage());
+                System.err.println("Error sending charter: " + e.getMessage());
             }
         });
     }
 
-    // Méthode appelée quand un joueur accepte la charte
+    // Method called when a player accepts the charter
     public static void onCharterAccepted(UUID playerId) {
         if (playersAwaitingCharter.remove(playerId)) {
-            // Marquer la charte comme acceptée
-            charterManager.marquerCharteAcceptee(playerId);
+            // Mark charter as accepted
+            charterManager.markCharterAccepted(playerId);
 
-            // Le mode de jeu sera restauré automatiquement par le NetworkHandler
-            // qui a accès direct au joueur
+            // Game mode will be restored automatically by the NetworkHandler
+            // which has direct access to the player
         }
     }
 
-    // Méthode appelée quand un joueur refuse la charte
+    // Method called when a player declines the charter
     public static void onCharterDeclined(UUID playerId) {
         playersAwaitingCharter.remove(playerId);
-        // La déconnexion sera gérée par le NetworkHandler
+        // Disconnection will be handled by the NetworkHandler
     }
 
-    // Vérifier si un joueur est en attente de la charte (utilisé par le mixin)
+    // Check if a player is waiting for the charter (used by mixin)
     public static boolean isAwaitingCharter(UUID playerId) {
         return playersAwaitingCharter.contains(playerId);
     }

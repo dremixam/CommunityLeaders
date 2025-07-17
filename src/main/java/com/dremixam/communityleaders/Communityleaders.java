@@ -22,16 +22,16 @@ public class Communityleaders implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        LOGGER.info("Initialisation de Community Leaders!");
+        LOGGER.info("Initializing Community Leaders!");
 
         configManager = new ConfigManager();
         invitationManager = new InvitationManager(configManager);
         charterManager = new CharterManager(configManager);
 
-        // Initialiser le système de réseau
+        // Initialize network system
         NetworkHandler.initialize(configManager, charterManager);
 
-        // Initialiser les événements de connexion des joueurs
+        // Initialize player connection events
         PlayerConnectionHandler.initialize(configManager, charterManager);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -40,9 +40,9 @@ public class Communityleaders implements ModInitializer {
             BanCommand.register(dispatcher, registryAccess, environment, invitationManager, configManager);
         });
 
-        LOGGER.info("Community Leaders initialisé avec succès!");
+        LOGGER.info("Community Leaders successfully initialized!");
         if (configManager.isCharterEnabled()) {
-            LOGGER.info("Système de charte activé");
+            LOGGER.info("Charter system enabled");
         }
     }
 }

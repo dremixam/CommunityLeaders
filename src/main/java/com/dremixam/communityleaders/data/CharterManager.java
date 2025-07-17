@@ -14,42 +14,52 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Manages charter acceptance data for players.
+ * Stores which players have accepted the server charter.
+ */
 public class CharterManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private final File aDonnees;
-    private static final Type aTypeDonnees = new TypeToken<ConcurrentHashMap<UUID, Boolean>>() {}.getType();
+    private final File dataFile;
+    private static final Type DATA_TYPE = new TypeToken<ConcurrentHashMap<UUID, Boolean>>() {}.getType();
 
-    private Set<UUID> aJoueursAyantAccepte;
+    private Set<UUID> playersWhoAcceptedCharter;
 
     public CharterManager(ConfigManager configManager) {
-        this.aDonnees = configManager.getConfigDirectory().resolve("charter_accepted.json").toFile();
-        chargerDonnees();
+        this.dataFile = configManager.getConfigDirectory().resolve("charter_accepted.json").toFile();
+        loadData();
     }
 
-    public void chargerDonnees() {
-        if (aDonnees.exists()) {
-            try (FileReader reader = new FileReader(aDonnees)) {
-                ConcurrentHashMap<UUID, Boolean> data = GSON.fromJson(reader, aTypeDonnees);
+    /**
+     * Loads charter acceptance data from the file.
+     */
+    public void loadData() {
+        if (dataFile.exists()) {
+            try (FileReader reader = new FileReader(dataFile)) {
+                ConcurrentHashMap<UUID, Boolean> data = GSON.fromJson(reader, DATA_TYPE);
                 if (data != null) {
-                    // Créer un nouveau Set avec les UUID au lieu d'utiliser keySet() directement
-                    aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
-                    aJoueursAyantAccepte.addAll(data.keySet());
+                    // Create a new Set with the UUIDs instead of using keySet() directly
+                    playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
+                    playersWhoAcceptedCharter.addAll(data.keySet());
                 } else {
-                    aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
+                    playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
+                playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
             }
         } else {
-            aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
+            playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
         }
     }
 
-    public void sauvegarderDonnees() {
-        try (FileWriter writer = new FileWriter(aDonnees)) {
+    /**
+     * Saves the current charter acceptance data to the file.
+     */
+    public void saveData() {
+        try (FileWriter writer = new FileWriter(dataFile)) {
             ConcurrentHashMap<UUID, Boolean> data = new ConcurrentHashMap<>();
-            for (UUID uuid : aJoueursAyantAccepte) {
+            for (UUID uuid : playersWhoAcceptedCharter) {
                 data.put(uuid, true);
             }
             GSON.toJson(data, writer);
@@ -58,21 +68,34 @@ public class CharterManager {
         }
     }
 
-    public boolean aAccepteCharte(UUID joueur) {
-        // Vérifier que l'UUID n'est pas null avant de chercher dans le Set
-        if (joueur == null) {
+    /**
+     * Checks if a player has accepted the charter.
+     * @param playerId The UUID of the player to check.
+     * @return true if the player has accepted, false otherwise.
+     */
+    public boolean hasAcceptedCharter(UUID playerId) {
+        // Check that the UUID is not null before searching in the Set
+        if (playerId == null) {
             return false;
         }
-        return aJoueursAyantAccepte.contains(joueur);
+        return playersWhoAcceptedCharter.contains(playerId);
     }
 
-    public void marquerCharteAcceptee(UUID joueur) {
-        aJoueursAyantAccepte.add(joueur);
-        sauvegarderDonnees();
+    /**
+     * Marks a player as having accepted the charter.
+     * @param playerId The UUID of the player.
+     */
+    public void markCharterAccepted(UUID playerId) {
+        playersWhoAcceptedCharter.add(playerId);
+        saveData();
     }
 
-    public void retirerAcceptationCharte(UUID joueur) {
-        aJoueursAyantAccepte.remove(joueur);
-        sauvegarderDonnees();
+    /**
+     * Removes a player's charter acceptance status.
+     * @param playerId The UUID of the player.
+     */
+    public void removeCharterAcceptance(UUID playerId) {
+        playersWhoAcceptedCharter.remove(playerId);
+        saveData();
     }
 }

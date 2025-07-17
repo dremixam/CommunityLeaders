@@ -4,14 +4,20 @@ import com.dremixam.communityleaders.client.gui.CharterScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
 
+/**
+ * Handles client-side network events, such as receiving the charter from the server.
+ */
 public class ClientNetworkHandler {
 
+    /**
+     * Initializes the client-side network handlers.
+     */
     public static void initialize() {
-        // Gestionnaire pour recevoir la charte du serveur
+        // Handler to receive the charter from the server
         ClientPlayNetworking.registerGlobalReceiver(
             com.dremixam.communityleaders.network.NetworkConstants.SHOW_CHARTER_ID,
             (client, handler, buf, responseSender) -> {
-                // Lire les données du paquet
+                // Read data from the packet
                 String title = buf.readString();
                 String content = buf.readString();
                 String acceptButton = buf.readString();
@@ -19,7 +25,7 @@ public class ClientNetworkHandler {
                 String checkboxText = buf.readString();
                 String declineMessage = buf.readString();
 
-                // Programmer l'affichage de l'écran sur le thread principal
+                // Schedule the screen display on the main thread
                 client.execute(() -> {
                     CharterScreen charterScreen = new CharterScreen(
                         title, content, acceptButton, declineButton, checkboxText, declineMessage

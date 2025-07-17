@@ -17,30 +17,30 @@ public class NetworkHandler {
         configManager = config;
         charterManager = charter;
 
-        // Gestionnaire pour l'acceptation de la charte
+        // Handler for charter acceptance
         ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.CHARTER_ACCEPT_ID, (server, player, handler, buf, responseSender) -> {
             server.execute(() -> {
-                // Vérifier si le joueur était en attente
+                // Check if the player was waiting
                 if (PlayerConnectionHandler.isAwaitingCharter(player.getUuid())) {
-                    // Marquer l'acceptation via PlayerConnectionHandler
+                    // Mark acceptance via PlayerConnectionHandler
                     PlayerConnectionHandler.onCharterAccepted(player.getUuid());
 
-                    // Restaurer le joueur en mode normal (sortir du mode spectateur)
+                    // Restore player to normal mode (exit spectator mode)
                     player.changeGameMode(GameMode.SURVIVAL);
 
-                    // Message de confirmation
-                    player.sendMessage(Text.literal("§aVous avez accepté la charte du serveur. Bienvenue !"), false);
+                    // Confirmation message
+                    player.sendMessage(Text.literal("§aYou have accepted the server charter. Welcome!"), false);
                 }
             });
         });
 
-        // Gestionnaire pour le refus de la charte
+        // Handler for charter decline
         ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.CHARTER_DECLINE_ID, (server, player, handler, buf, responseSender) -> {
             server.execute(() -> {
-                // Marquer le refus
+                // Mark decline
                 PlayerConnectionHandler.onCharterDeclined(player.getUuid());
 
-                // Déconnecter le joueur avec le message configuré
+                // Disconnect player with configured message
                 player.networkHandler.disconnect(Text.literal(configManager.getCharterDeclineMessage()));
             });
         });

@@ -22,12 +22,12 @@ import java.util.Optional;
 import java.util.Date;
 
 public class BanCommand {
-    private static InvitationManager aInvitationManager;
-    private static ConfigManager aConfigManager;
+    private static InvitationManager invitationManager;
+    private static ConfigManager configManager;
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment, InvitationManager invitationManager, ConfigManager configManager) {
-        aInvitationManager = invitationManager;
-        aConfigManager = configManager;
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment, InvitationManager invManager, ConfigManager confManager) {
+        invitationManager = invManager;
+        configManager = confManager;
         dispatcher.register(CommandManager.literal("kickban")
                 .requires(source -> {
                     if (source.isExecutedByPlayer()) {
@@ -53,24 +53,24 @@ public class BanCommand {
         Optional<GameProfile> gameProfileOpt = context.getSource().getServer().getUserCache().findByName(playerName);
 
         if (gameProfileOpt.isEmpty()) {
-            context.getSource().sendError(Text.literal(aConfigManager.getMessage("player_not_found", playerName)));
+            context.getSource().sendError(Text.literal(configManager.getMessage("player_not_found", playerName)));
             return 0;
         }
 
         GameProfile gameProfile = gameProfileOpt.get();
 
-        if (!aInvitationManager.aInvite(streamer.getUuid(), gameProfile.getId())) {
-            context.getSource().sendError(Text.literal(aConfigManager.getMessage("not_your_invite")));
+        if (!invitationManager.hasInvited(streamer.getUuid(), gameProfile.getId())) {
+            context.getSource().sendError(Text.literal(configManager.getMessage("not_your_invite")));
             return 0;
         }
 
         BannedPlayerList bannedPlayerList = context.getSource().getServer().getPlayerManager().getUserBanList();
         if (bannedPlayerList.contains(gameProfile)) {
-            context.getSource().sendFeedback(() -> Text.literal(aConfigManager.getMessage("already_banned")), false);
+            context.getSource().sendFeedback(() -> Text.literal(configManager.getMessage("already_banned")), false);
             return 0;
         }
 
-        BannedPlayerEntry banEntry = new BannedPlayerEntry(gameProfile, new Date(), streamer.getName().getString(), null, aConfigManager.getMessage("ban_reason"));
+        BannedPlayerEntry banEntry = new BannedPlayerEntry(gameProfile, new Date(), streamer.getName().getString(), null, configManager.getMessage("ban_reason"));
         bannedPlayerList.add(banEntry);
 
         Whitelist whitelist = context.getSource().getServer().getPlayerManager().getWhitelist();
@@ -78,14 +78,14 @@ public class BanCommand {
             whitelist.remove(gameProfile);
         }
 
-        aInvitationManager.retirerInvitation(streamer.getUuid(), gameProfile.getId());
+        invitationManager.removeInvitation(streamer.getUuid(), gameProfile.getId());
 
         ServerPlayerEntity playerToBan = context.getSource().getServer().getPlayerManager().getPlayer(gameProfile.getId());
         if (playerToBan != null) {
-            playerToBan.networkHandler.disconnect(Text.literal(aConfigManager.getMessage("ban_reason")));
+            playerToBan.networkHandler.disconnect(Text.literal(configManager.getMessage("ban_reason")));
         }
 
-        context.getSource().sendFeedback(() -> Text.literal(aConfigManager.getMessage("ban_success", playerName)), true);
+        context.getSource().sendFeedback(() -> Text.literal(configManager.getMessage("ban_success", playerName)), true);
 
         return 1;
     }
