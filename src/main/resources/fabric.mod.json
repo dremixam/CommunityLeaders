@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "communityleaders",
+  "version": "${version}",
+  "name": "CommunityLeaders",
+  "description": "Mod permettant aux streamers de gérer leurs communautés avec des invitations whitelist personnalisées",
+  "authors": ["Dremixam"],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/communityleaders/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.dremixam.communityleaders.client.CommunityleadersDataGenerator"
+    ],
+    "client": [
+      "com.dremixam.communityleaders.client.CommunityleadersClient"
+    ],
+    "main": [
+      "com.dremixam.communityleaders.Communityleaders"
+    ]
+  },
+  "mixins": [
+    "communityleaders.mixins.json",
+    {
+      "config": "communityleaders.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}",
+    "luckperms": "*"
+  },
+  "suggests": {
+    "luckperms": "Requis pour la gestion des permissions des streamers"
+  }
+}
