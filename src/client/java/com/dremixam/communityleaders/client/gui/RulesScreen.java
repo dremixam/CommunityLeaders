@@ -43,12 +43,87 @@ public class RulesScreen extends Screen {
         int windowX = 40;
         int windowY = 20;
 
-        // Recalculate scroll limits when window is resized
+        // Recalculate scroll limits when window is resized using word wrapping
         int contentHeight = windowHeight - 120; // Same calculation as in render()
+        int contentWidth = windowWidth - 40;
         int lineHeight = 12;
         int maxLines = contentHeight / lineHeight;
-        String[] lines = rulesContent.split("\n");
-        this.maxScrollOffset = Math.max(0, lines.length - maxLines);
+
+        // Apply word wrapping to calculate accurate line count
+        String[] originalLines = rulesContent.split("\n");
+        java.util.List<String> wrappedLines = new java.util.ArrayList<>();
+        int maxWidth = contentWidth - 10; // Leave some margin
+
+        for (String originalLine : originalLines) {
+            if (originalLine.trim().isEmpty()) {
+                wrappedLines.add(""); // Preserve empty lines
+                continue;
+            }
+
+            // Check if line fits within width
+            if (this.textRenderer.getWidth(originalLine) <= maxWidth) {
+                wrappedLines.add(originalLine);
+            } else {
+                // Split long line into multiple lines with formatting preservation
+                String[] words = originalLine.split(" ");
+                StringBuilder currentLine = new StringBuilder();
+                String activeFormatting = ""; // Track active formatting codes
+
+                for (int i = 0; i < words.length; i++) {
+                    String word = words[i];
+
+                    // Check if next word starts with ":" to treat current word + space + ":" as non-breakable
+                    boolean nextWordStartsWithColon = (i + 1 < words.length) && words[i + 1].startsWith(":");
+                    String testWord = word;
+
+                    if (nextWordStartsWithColon) {
+                        // Treat word + space + colon as a single unit
+                        testWord = word + " " + words[i + 1];
+                    }
+
+                    String testLine = currentLine.length() == 0 ? activeFormatting + testWord : currentLine + " " + testWord;
+
+                    if (this.textRenderer.getWidth(testLine) <= maxWidth) {
+                        currentLine = new StringBuilder(testLine);
+                        // Update active formatting based on this word
+                        activeFormatting = extractActiveFormatting(testLine);
+
+                        // Skip next word if we combined it with current word
+                        if (nextWordStartsWithColon) {
+                            i++;
+                        }
+                    } else {
+                        // Current line is full, start a new one
+                        if (currentLine.length() > 0) {
+                            wrappedLines.add(currentLine.toString());
+                            currentLine = new StringBuilder(activeFormatting + testWord);
+                            activeFormatting = extractActiveFormatting(currentLine.toString());
+
+                            // Skip next word if we combined it with current word
+                            if (nextWordStartsWithColon) {
+                                i++;
+                            }
+                        } else {
+                            // Single word is too long, force it on its own line
+                            wrappedLines.add(activeFormatting + testWord);
+                            activeFormatting = extractActiveFormatting(activeFormatting + testWord);
+
+                            // Skip next word if we combined it with current word
+                            if (nextWordStartsWithColon) {
+                                i++;
+                            }
+                        }
+                    }
+                }
+
+                // Add remaining text
+                if (currentLine.length() > 0) {
+                    wrappedLines.add(currentLine.toString());
+                }
+            }
+        }
+
+        this.maxScrollOffset = Math.max(0, wrappedLines.size() - maxLines);
 
         // Adjust current scroll position if it's now out of bounds
         if (this.scrollOffset > this.maxScrollOffset) {
@@ -127,20 +202,93 @@ public class RulesScreen extends Screen {
         // Text area background
         context.fill(contentX - 5, contentY - 5, contentX + contentWidth + 5, contentY + contentHeight + 5, 0xFF1E1E1E);
 
-        // Rules content with scroll
-        String[] lines = rulesContent.split("\n");
+        // Rules content with scroll and word wrapping
+        String[] originalLines = rulesContent.split("\n");
         int lineHeight = 12;
         int maxLines = contentHeight / lineHeight;
 
-        // Recalculate maxScrollOffset based on actual displayable lines
-        this.maxScrollOffset = Math.max(0, lines.length - maxLines);
+        // Apply word wrapping to create final display lines
+        java.util.List<String> wrappedLines = new java.util.ArrayList<>();
+        int maxWidth = contentWidth - 10; // Leave some margin
+
+        for (String originalLine : originalLines) {
+            if (originalLine.trim().isEmpty()) {
+                wrappedLines.add(""); // Preserve empty lines
+                continue;
+            }
+
+            // Check if line fits within width
+            if (this.textRenderer.getWidth(originalLine) <= maxWidth) {
+                wrappedLines.add(originalLine);
+            } else {
+                // Split long line into multiple lines with formatting preservation
+                String[] words = originalLine.split(" ");
+                StringBuilder currentLine = new StringBuilder();
+                String activeFormatting = ""; // Track active formatting codes
+
+                for (int i = 0; i < words.length; i++) {
+                    String word = words[i];
+
+                    // Check if next word starts with ":" to treat current word + space + ":" as non-breakable
+                    boolean nextWordStartsWithColon = (i + 1 < words.length) && words[i + 1].startsWith(":");
+                    String testWord = word;
+
+                    if (nextWordStartsWithColon) {
+                        // Treat word + space + colon as a single unit
+                        testWord = word + " " + words[i + 1];
+                    }
+
+                    String testLine = currentLine.length() == 0 ? activeFormatting + testWord : currentLine + " " + testWord;
+
+                    if (this.textRenderer.getWidth(testLine) <= maxWidth) {
+                        currentLine = new StringBuilder(testLine);
+                        // Update active formatting based on this word
+                        activeFormatting = extractActiveFormatting(testLine);
+
+                        // Skip next word if we combined it with current word
+                        if (nextWordStartsWithColon) {
+                            i++;
+                        }
+                    } else {
+                        // Current line is full, start a new one
+                        if (currentLine.length() > 0) {
+                            wrappedLines.add(currentLine.toString());
+                            currentLine = new StringBuilder(activeFormatting + testWord);
+                            activeFormatting = extractActiveFormatting(currentLine.toString());
+
+                            // Skip next word if we combined it with current word
+                            if (nextWordStartsWithColon) {
+                                i++;
+                            }
+                        } else {
+                            // Single word is too long, force it on its own line
+                            wrappedLines.add(activeFormatting + testWord);
+                            activeFormatting = extractActiveFormatting(activeFormatting + testWord);
+
+                            // Skip next word if we combined it with current word
+                            if (nextWordStartsWithColon) {
+                                i++;
+                            }
+                        }
+                    }
+                }
+
+                // Add remaining text
+                if (currentLine.length() > 0) {
+                    wrappedLines.add(currentLine.toString());
+                }
+            }
+        }
+
+        // Recalculate maxScrollOffset based on wrapped lines
+        this.maxScrollOffset = Math.max(0, wrappedLines.size() - maxLines);
 
         // Clip text within content area
         context.enableScissor(contentX, contentY, contentX + contentWidth, contentY + contentHeight);
 
-        for (int i = scrollOffset; i < Math.min(lines.length, scrollOffset + maxLines); i++) {
+        for (int i = scrollOffset; i < Math.min(wrappedLines.size(), scrollOffset + maxLines); i++) {
             int y = contentY + (i - scrollOffset) * lineHeight;
-            String line = lines[i].trim();
+            String line = wrappedLines.get(i).trim();
             if (!line.isEmpty()) {
                 context.drawTextWithShadow(this.textRenderer, line, contentX, y, 0xFFFFFF);
             }
@@ -154,7 +302,7 @@ public class RulesScreen extends Screen {
             int scrollBarX = windowX + windowWidth - 15;
             int scrollBarY = contentY;
             int scrollBarHeight = contentHeight;
-            int scrollThumbHeight = Math.max(10, scrollBarHeight * maxLines / lines.length);
+            int scrollThumbHeight = Math.max(10, scrollBarHeight * maxLines / wrappedLines.size());
             int scrollThumbY = scrollBarY + (scrollBarHeight - scrollThumbHeight) * scrollOffset / maxScrollOffset;
 
             // Scroll bar background
@@ -221,5 +369,49 @@ public class RulesScreen extends Screen {
     public void removed() {
         // Do nothing when screen is removed - prevents returning to game
         super.removed();
+    }
+
+    /**
+     * Extracts active formatting codes from a text string to preserve them across line breaks
+     */
+    private String extractActiveFormatting(String text) {
+        StringBuilder activeFormatting = new StringBuilder();
+        boolean bold = false, italic = false, underlined = false, strikethrough = false, obfuscated = false;
+        String color = "";
+
+        for (int i = 0; i < text.length() - 1; i++) {
+            if (text.charAt(i) == '§') {
+                char code = text.charAt(i + 1);
+                switch (code) {
+                    // Colors
+                    case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f':
+                        color = "§" + code;
+                        // Color codes reset all formatting
+                        bold = italic = underlined = strikethrough = obfuscated = false;
+                        break;
+                    // Formatting codes
+                    case 'l': bold = true; break;           // Bold
+                    case 'o': italic = true; break;         // Italic
+                    case 'n': underlined = true; break;     // Underlined
+                    case 'm': strikethrough = true; break; // Strikethrough
+                    case 'k': obfuscated = true; break;     // Obfuscated
+                    case 'r': // Reset - clear everything
+                        color = "";
+                        bold = italic = underlined = strikethrough = obfuscated = false;
+                        break;
+                }
+                i++; // Skip the next character as it's the formatting code
+            }
+        }
+
+        // Build the active formatting string
+        activeFormatting.append(color);
+        if (bold) activeFormatting.append("§l");
+        if (italic) activeFormatting.append("§o");
+        if (underlined) activeFormatting.append("§n");
+        if (strikethrough) activeFormatting.append("§m");
+        if (obfuscated) activeFormatting.append("§k");
+
+        return activeFormatting.toString();
     }
 }
