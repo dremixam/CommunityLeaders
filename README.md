@@ -72,23 +72,23 @@ The `config/communityleaders/config.yml` file allows you to customize:
 ```yaml
 rules:
   enabled: true
-  title: "Server Rules"
+  title: "§6§lServer Rules"
   content: |
-    Welcome to our community server!
+    §b§lWelcome to our community server!
     
-    By playing on this server, you agree to follow these rules:
+    §fBy playing on this server, you agree to follow these rules:
     
-    1. Respect other players and their builds
-    2. No griefing, stealing or intentional destruction
-    3. No offensive language or harassment
-    4. Respect protected areas and private properties
-    5. No cheating, hacking or bug exploitation
-    6. Listen to and respect moderators and administrators
+    §a1. §fRespect other players and their builds
+    §a2. §fNo griefing, stealing or intentional destruction
+    §a3. §fNo offensive language or harassment
+    §a4. §fRespect protected areas and private properties
+    §a5. §fNo cheating, hacking or bug exploitation
+    §a6. §fListen to and respect moderators and administrators
     
-    Breaking these rules may result in a warning,
-    temporary suspension or permanent ban.
+    §c§lBreaking these rules may result in a warning,
+    §c§ltemporary suspension or permanent ban.
     
-    Thank you for helping maintain a friendly community!
+    §e§lThank you for helping maintain a friendly community!
   accept_button: "I Accept"
   decline_button: "I Decline"
   checkbox_text: "I understand and accept the rules"
