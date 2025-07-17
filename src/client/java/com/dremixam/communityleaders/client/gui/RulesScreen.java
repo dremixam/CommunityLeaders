@@ -20,7 +20,7 @@ public class RulesScreen extends Screen {
     private ButtonWidget declineButton;
 
     private int scrollOffset = 0;
-    private final int maxScrollOffset;
+    private int maxScrollOffset; // Remove final to allow recalculation
 
     public RulesScreen(String title, String content, String acceptBtn, String declineBtn, String checkboxTxt, String declineMsg) {
         super(Text.literal(title));
@@ -30,9 +30,9 @@ public class RulesScreen extends Screen {
         this.checkboxText = checkboxTxt;
         this.declineMessage = declineMsg;
 
-        // Calculate max scroll based on number of lines
+        // Calculate max scroll based on number of lines - will be recalculated in render()
         String[] lines = content.split("\n");
-        this.maxScrollOffset = Math.max(0, lines.length - 15); // Display about 15 lines
+        this.maxScrollOffset = Math.max(0, lines.length - 15); // Initial estimate
     }
 
     @Override
@@ -42,6 +42,18 @@ public class RulesScreen extends Screen {
         int windowHeight = this.height - 80;
         int windowX = 40;
         int windowY = 20;
+
+        // Recalculate scroll limits when window is resized
+        int contentHeight = windowHeight - 120; // Same calculation as in render()
+        int lineHeight = 12;
+        int maxLines = contentHeight / lineHeight;
+        String[] lines = rulesContent.split("\n");
+        this.maxScrollOffset = Math.max(0, lines.length - maxLines);
+
+        // Adjust current scroll position if it's now out of bounds
+        if (this.scrollOffset > this.maxScrollOffset) {
+            this.scrollOffset = this.maxScrollOffset;
+        }
 
         int centerX = this.width / 2;
         int bottomY = windowY + windowHeight - 35; // Middle ground: not too high, not too low
@@ -119,6 +131,9 @@ public class RulesScreen extends Screen {
         String[] lines = rulesContent.split("\n");
         int lineHeight = 12;
         int maxLines = contentHeight / lineHeight;
+
+        // Recalculate maxScrollOffset based on actual displayable lines
+        this.maxScrollOffset = Math.max(0, lines.length - maxLines);
 
         // Clip text within content area
         context.enableScissor(contentX, contentY, contentX + contentWidth, contentY + contentHeight);
