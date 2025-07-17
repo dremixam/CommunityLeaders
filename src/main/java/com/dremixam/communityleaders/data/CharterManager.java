@@ -31,7 +31,9 @@ public class CharterManager {
             try (FileReader reader = new FileReader(aDonnees)) {
                 ConcurrentHashMap<UUID, Boolean> data = GSON.fromJson(reader, aTypeDonnees);
                 if (data != null) {
-                    aJoueursAyantAccepte = data.keySet();
+                    // Créer un nouveau Set avec les UUID au lieu d'utiliser keySet() directement
+                    aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
+                    aJoueursAyantAccepte.addAll(data.keySet());
                 } else {
                     aJoueursAyantAccepte = ConcurrentHashMap.newKeySet();
                 }
@@ -57,6 +59,10 @@ public class CharterManager {
     }
 
     public boolean aAccepteCharte(UUID joueur) {
+        // Vérifier que l'UUID n'est pas null avant de chercher dans le Set
+        if (joueur == null) {
+            return false;
+        }
         return aJoueursAyantAccepte.contains(joueur);
     }
 

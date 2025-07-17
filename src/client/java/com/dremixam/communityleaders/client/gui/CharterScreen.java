@@ -47,7 +47,7 @@ public class CharterScreen extends Screen {
         int bottomY = windowY + windowHeight - 35; // Juste milieu : ni trop haut, ni trop bas
 
         // Checkbox "J'accepte" - centrée dans la fenêtre
-        this.acceptCheckbox = new CheckboxWidget(centerX - 100, bottomY - 20, 200, 20,
+        this.acceptCheckbox = new CheckboxWidget(centerX - 100, bottomY - 25, 200, 20,
                 Text.literal(checkboxText), false) {
             @Override
             public void onPress() {
@@ -59,22 +59,22 @@ public class CharterScreen extends Screen {
 
         // Bouton "J'accepte" - dans la fenêtre
         this.acceptButton = ButtonWidget.builder(Text.literal(acceptButtonText), button -> {
-            // Envoyer un paquet au serveur pour confirmer l'acceptation
-            CharterResponsePacket.sendAcceptPacket();
-            this.close();
-        })
-        .dimensions(centerX - 80, bottomY, 70, 20)
-        .build();
+                    // Envoyer un paquet au serveur pour confirmer l'acceptation
+                    CharterResponsePacket.sendAcceptPacket();
+                    this.close();
+                })
+                .dimensions(centerX - 80, bottomY + 5, 70, 20)
+                .build();
         this.acceptButton.active = false; // Désactivé par défaut
         this.addDrawableChild(acceptButton);
 
         // Bouton "Je refuse" - dans la fenêtre
         this.declineButton = ButtonWidget.builder(Text.literal(declineButtonText), button -> {
-            // Envoyer un paquet de refus au serveur au lieu de déconnecter directement
-            CharterResponsePacket.sendDeclinePacket();
-        })
-        .dimensions(centerX + 10, bottomY, 70, 20)
-        .build();
+                    // Envoyer un paquet de refus au serveur au lieu de déconnecter directement
+                    CharterResponsePacket.sendDeclinePacket();
+                })
+                .dimensions(centerX + 10, bottomY + 5, 70, 20)
+                .build();
         this.addDrawableChild(declineButton);
     }
 
