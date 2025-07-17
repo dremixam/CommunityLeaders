@@ -22,6 +22,11 @@ public class RulesScreen extends Screen {
     private int scrollOffset = 0;
     private int maxScrollOffset; // Remove final to allow recalculation
 
+    // Scrollbar interaction state
+    private boolean isDraggingScrollbar = false;
+    private int dragStartY = 0;
+    private int dragStartScrollOffset = 0;
+
     public RulesScreen(String title, String content, String acceptBtn, String declineBtn, String checkboxTxt, String declineMsg) {
         super(Text.literal(title));
         this.rulesContent = content;
@@ -283,6 +288,9 @@ public class RulesScreen extends Screen {
         // Recalculate maxScrollOffset based on wrapped lines
         this.maxScrollOffset = Math.max(0, wrappedLines.size() - maxLines);
 
+        // Update checkbox state based on scroll position
+        updateCheckboxState();
+
         // Clip text within content area
         context.enableScissor(contentX, contentY, contentX + contentWidth, contentY + contentHeight);
 
@@ -351,24 +359,71 @@ public class RulesScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Only allow clicks on interface widgets
+        if (button == 0 && maxScrollOffset > 0) { // Left click
+            // Calculate scrollbar area
+            int windowWidth = this.width - 80;
+            int windowHeight = this.height - 80;
+            int windowX = 40;
+            int windowY = 20;
+            int contentY = windowY + 50;
+            int contentHeight = windowHeight - 120;
+
+            int scrollBarX = windowX + windowWidth - 15;
+            int scrollBarY = contentY;
+            int scrollBarHeight = contentHeight;
+
+            // Check if click is on scrollbar
+            if (mouseX >= scrollBarX && mouseX <= scrollBarX + 8 &&
+                mouseY >= scrollBarY && mouseY <= scrollBarY + scrollBarHeight) {
+
+                // Calculate click position relative to scrollbar
+                double relativeY = (mouseY - scrollBarY) / scrollBarHeight;
+                int newScrollOffset = (int) (relativeY * maxScrollOffset);
+
+                // Clamp to valid range
+                scrollOffset = Math.max(0, Math.min(maxScrollOffset, newScrollOffset));
+
+                // Start dragging
+                isDraggingScrollbar = true;
+                dragStartY = (int) mouseY;
+                dragStartScrollOffset = scrollOffset;
+
+                return true;
+            }
+        }
+
+        // Allow clicks on interface widgets
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean shouldCloseOnEsc() {
-        return false; // Prevent closing with Escape
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0 && isDraggingScrollbar) {
+            isDraggingScrollbar = false;
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     @Override
-    public boolean shouldPause() {
-        return true; // Pause game if in singleplayer world
-    }
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (isDraggingScrollbar && maxScrollOffset > 0) {
+            // Calculate scrollbar area
+            int windowHeight = this.height - 80;
+            int contentHeight = windowHeight - 120;
 
-    @Override
-    public void removed() {
-        // Do nothing when screen is removed - prevents returning to game
-        super.removed();
+            // Calculate drag distance and convert to scroll offset
+            int dragDistance = (int) mouseY - dragStartY;
+            double scrollRatio = (double) dragDistance / contentHeight;
+            int scrollDelta = (int) (scrollRatio * maxScrollOffset);
+
+            // Apply new scroll offset
+            scrollOffset = Math.max(0, Math.min(maxScrollOffset, dragStartScrollOffset + scrollDelta));
+
+            return true;
+        }
+
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
 
     /**
@@ -413,5 +468,15 @@ public class RulesScreen extends Screen {
         if (obfuscated) activeFormatting.append("§k");
 
         return activeFormatting.toString();
+    }
+
+    /**
+     * Update the checkbox state based on the current scroll position
+     */
+    private void updateCheckboxState() {
+        // Enable checkbox only when scrolled to the bottom
+        this.acceptCheckbox.active = (maxScrollOffset == 0 || scrollOffset >= maxScrollOffset);
+        // Button is active only if checkbox is both active and checked
+        this.acceptButton.active = this.acceptCheckbox.active && this.acceptCheckbox.isChecked();
     }
 }
