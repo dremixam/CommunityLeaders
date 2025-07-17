@@ -15,23 +15,23 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages charter acceptance data for players.
- * Stores which players have accepted the server charter.
+ * Manages rules acceptance data for players.
+ * Stores which players have accepted the server rules.
  */
-public class CharterManager {
+public class RulesManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private final File dataFile;
     private static final Type DATA_TYPE = new TypeToken<ConcurrentHashMap<UUID, Boolean>>() {}.getType();
 
-    private Set<UUID> playersWhoAcceptedCharter;
+    private Set<UUID> playersWhoAcceptedRules;
 
-    public CharterManager(ConfigManager configManager) {
-        this.dataFile = configManager.getConfigDirectory().resolve("charter_accepted.json").toFile();
+    public RulesManager(ConfigManager configManager) {
+        this.dataFile = configManager.getConfigDirectory().resolve("rules_accepted.json").toFile();
         loadData();
     }
 
     /**
-     * Loads charter acceptance data from the file.
+     * Loads rules acceptance data from the file.
      */
     public void loadData() {
         if (dataFile.exists()) {
@@ -39,27 +39,27 @@ public class CharterManager {
                 ConcurrentHashMap<UUID, Boolean> data = GSON.fromJson(reader, DATA_TYPE);
                 if (data != null) {
                     // Create a new Set with the UUIDs instead of using keySet() directly
-                    playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
-                    playersWhoAcceptedCharter.addAll(data.keySet());
+                    playersWhoAcceptedRules = ConcurrentHashMap.newKeySet();
+                    playersWhoAcceptedRules.addAll(data.keySet());
                 } else {
-                    playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
+                    playersWhoAcceptedRules = ConcurrentHashMap.newKeySet();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
+                playersWhoAcceptedRules = ConcurrentHashMap.newKeySet();
             }
         } else {
-            playersWhoAcceptedCharter = ConcurrentHashMap.newKeySet();
+            playersWhoAcceptedRules = ConcurrentHashMap.newKeySet();
         }
     }
 
     /**
-     * Saves the current charter acceptance data to the file.
+     * Saves the current rules acceptance data to the file.
      */
     public void saveData() {
         try (FileWriter writer = new FileWriter(dataFile)) {
             ConcurrentHashMap<UUID, Boolean> data = new ConcurrentHashMap<>();
-            for (UUID uuid : playersWhoAcceptedCharter) {
+            for (UUID uuid : playersWhoAcceptedRules) {
                 data.put(uuid, true);
             }
             GSON.toJson(data, writer);
@@ -69,33 +69,33 @@ public class CharterManager {
     }
 
     /**
-     * Checks if a player has accepted the charter.
+     * Checks if a player has accepted the rules.
      * @param playerId The UUID of the player to check.
      * @return true if the player has accepted, false otherwise.
      */
-    public boolean hasAcceptedCharter(UUID playerId) {
+    public boolean hasAcceptedRules(UUID playerId) {
         // Check that the UUID is not null before searching in the Set
         if (playerId == null) {
             return false;
         }
-        return playersWhoAcceptedCharter.contains(playerId);
+        return playersWhoAcceptedRules.contains(playerId);
     }
 
     /**
-     * Marks a player as having accepted the charter.
+     * Marks a player as having accepted the rules.
      * @param playerId The UUID of the player.
      */
-    public void markCharterAccepted(UUID playerId) {
-        playersWhoAcceptedCharter.add(playerId);
+    public void markRulesAccepted(UUID playerId) {
+        playersWhoAcceptedRules.add(playerId);
         saveData();
     }
 
     /**
-     * Removes a player's charter acceptance status.
+     * Removes a player's rules acceptance status.
      * @param playerId The UUID of the player.
      */
-    public void removeCharterAcceptance(UUID playerId) {
-        playersWhoAcceptedCharter.remove(playerId);
+    public void removeRulesAcceptance(UUID playerId) {
+        playersWhoAcceptedRules.remove(playerId);
         saveData();
     }
 }

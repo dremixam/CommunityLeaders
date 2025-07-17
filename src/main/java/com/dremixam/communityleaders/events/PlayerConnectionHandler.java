@@ -1,8 +1,8 @@
 package com.dremixam.communityleaders.events;
 
 import com.dremixam.communityleaders.config.ConfigManager;
-import com.dremixam.communityleaders.data.CharterManager;
-import com.dremixam.communityleaders.network.CharterPacket;
+import com.dremixam.communityleaders.data.RulesManager;
+import com.dremixam.communityleaders.network.RulesPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -12,85 +12,85 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerConnectionHandler {
     private static ConfigManager configManager;
-    private static CharterManager charterManager;
+    private static RulesManager rulesManager;
 
-    // Players waiting for charter acceptance
-    private static final Set<UUID> playersAwaitingCharter = ConcurrentHashMap.newKeySet();
+    // Players waiting for rules acceptance
+    private static final Set<UUID> playersAwaitingRules = ConcurrentHashMap.newKeySet();
 
-    public static void initialize(ConfigManager config, CharterManager charter) {
+    public static void initialize(ConfigManager config, RulesManager rules) {
         configManager = config;
-        charterManager = charter;
+        rulesManager = rules;
 
-        // When a player connects, check if they need to see the charter
+        // When a player connects, check if they need to see the rules
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayerEntity player = handler.getPlayer();
             UUID playerId = player.getUuid();
 
-            // Check if the player needs to accept the charter
-            if (shouldShowCharter(playerId)) {
+            // Check if the player needs to accept the rules
+            if (shouldShowRules(playerId)) {
                 // Mark as waiting - the mixin will only block interaction
-                playersAwaitingCharter.add(playerId);
+                playersAwaitingRules.add(playerId);
 
                 // Put in temporary spectator mode so other players don't see them
                 player.changeGameMode(net.minecraft.world.GameMode.SPECTATOR);
 
-                // Send charter immediately, while loading is in progress
-                sendCharterToPlayer(player);
+                // Send rules immediately, while loading is in progress
+                sendRulesToPlayer(player);
             }
         });
     }
 
-    // Check if a player should see the charter
-    public static boolean shouldShowCharter(UUID playerId) {
-        if (!configManager.isCharterEnabled()) {
+    // Check if a player should see the rules
+    public static boolean shouldShowRules(UUID playerId) {
+        if (!configManager.isRulesEnabled()) {
             return false;
         }
 
-        return !charterManager.hasAcceptedCharter(playerId);
+        return !rulesManager.hasAcceptedRules(playerId);
     }
 
-    // Send charter to a player
-    private static void sendCharterToPlayer(ServerPlayerEntity player) {
+    // Send rules to a player
+    private static void sendRulesToPlayer(ServerPlayerEntity player) {
         if (player == null || player.networkHandler == null) {
             return;
         }
 
         player.server.execute(() -> {
             try {
-                CharterPacket.sendCharterToPlayer(
+                RulesPacket.sendRulesToPlayer(
                     player,
-                    configManager.getCharterTitle(),
-                    configManager.getCharterContent(),
-                    configManager.getCharterAcceptButton(),
-                    configManager.getCharterDeclineButton(),
-                    configManager.getCharterCheckboxText(),
-                    configManager.getCharterDeclineMessage()
+                    configManager.getRulesTitle(),
+                    configManager.getRulesContent(),
+                    configManager.getRulesAcceptButton(),
+                    configManager.getRulesDeclineButton(),
+                    configManager.getRulesCheckboxText(),
+                    configManager.getRulesDeclineMessage()
                 );
             } catch (Exception e) {
-                System.err.println("Error sending charter: " + e.getMessage());
+                System.err.println("Error sending rules: " + e.getMessage());
             }
         });
     }
 
-    // Method called when a player accepts the charter
-    public static void onCharterAccepted(UUID playerId) {
-        if (playersAwaitingCharter.remove(playerId)) {
-            // Mark charter as accepted
-            charterManager.markCharterAccepted(playerId);
+    // Method called when a player accepts the rules
+    public static void onRulesAccepted(UUID playerId) {
+        if (playersAwaitingRules.remove(playerId)) {
+            // Mark rules as accepted
+            rulesManager.markRulesAccepted(playerId);
 
             // Game mode will be restored automatically by the NetworkHandler
             // which has direct access to the player
         }
     }
 
-    // Method called when a player declines the charter
-    public static void onCharterDeclined(UUID playerId) {
-        playersAwaitingCharter.remove(playerId);
+    // Method called when a player declines the rules
+    public static void onRulesDeclined(UUID playerId) {
+        playersAwaitingRules.remove(playerId);
         // Disconnection will be handled by the NetworkHandler
     }
 
-    // Check if a player is waiting for the charter (used by mixin)
-    public static boolean isAwaitingCharter(UUID playerId) {
-        return playersAwaitingCharter.contains(playerId);
+    // Check if a player is waiting for the rules (used by mixin)
+    public static boolean isAwaitingRules(UUID playerId) {
+        return playersAwaitingRules.contains(playerId);
     }
 }

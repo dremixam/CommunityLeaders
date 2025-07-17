@@ -18,26 +18,26 @@ public class ServerPlayNetworkHandlerMixin {
     public ServerPlayerEntity player;
 
     /**
-     * Intercepte l'envoi de paquets pour bloquer les données du monde si la charte n'est pas acceptée
+     * Intercepts packet sending to block world data if rules are not accepted
      */
     @Inject(method = "sendPacket(Lnet/minecraft/network/packet/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void interceptPacketSending(Packet<?> packet, CallbackInfo ci) {
-        if (this.player != null && PlayerConnectionHandler.isAwaitingCharter(this.player.getUuid())) {
+        if (this.player != null && PlayerConnectionHandler.isAwaitingRules(this.player.getUuid())) {
 
-            // Bloquer SEULEMENT les paquets qui permettent au joueur d'interagir
-            // Laisser passer les données du monde pour qu'il se charge correctement
+            // Block ONLY packets that allow player interaction
+            // Let world data pass through so it loads correctly
             if (packet instanceof PlayerPositionLookS2CPacket ||
                 packet instanceof UpdateSelectedSlotS2CPacket ||
                 packet instanceof HealthUpdateS2CPacket ||
                 packet instanceof PlayerAbilitiesS2CPacket) {
 
-                // Bloquer ces paquets d'interaction
+                // Block these interaction packets
                 ci.cancel();
                 return;
             }
 
-            // Autoriser tout le reste (chunks, entités, inventaire, etc.)
-            // Le joueur verra le monde se charger mais ne pourra pas interagir
+            // Allow everything else (chunks, entities, inventory, etc.)
+            // Player will see the world loading but cannot interact
         }
     }
 }

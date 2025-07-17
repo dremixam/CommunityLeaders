@@ -1,6 +1,6 @@
 package com.dremixam.communityleaders.client.gui;
 
-import com.dremixam.communityleaders.network.CharterResponsePacket;
+import com.dremixam.communityleaders.network.RulesResponsePacket;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -8,8 +8,8 @@ import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-public class CharterScreen extends Screen {
-    private final String charterContent;
+public class RulesScreen extends Screen {
+    private final String rulesContent;
     private final String acceptButtonText;
     private final String declineButtonText;
     private final String checkboxText;
@@ -22,9 +22,9 @@ public class CharterScreen extends Screen {
     private int scrollOffset = 0;
     private final int maxScrollOffset;
 
-    public CharterScreen(String title, String content, String acceptBtn, String declineBtn, String checkboxTxt, String declineMsg) {
+    public RulesScreen(String title, String content, String acceptBtn, String declineBtn, String checkboxTxt, String declineMsg) {
         super(Text.literal(title));
-        this.charterContent = content;
+        this.rulesContent = content;
         this.acceptButtonText = acceptBtn;
         this.declineButtonText = declineBtn;
         this.checkboxText = checkboxTxt;
@@ -60,7 +60,7 @@ public class CharterScreen extends Screen {
         // "I accept" button - inside the window
         this.acceptButton = ButtonWidget.builder(Text.literal(acceptButtonText), button -> {
                     // Send packet to server to confirm acceptance
-                    CharterResponsePacket.sendAcceptPacket();
+                    RulesResponsePacket.sendAcceptPacket();
                     this.close();
                 })
                 .dimensions(centerX - 80, bottomY + 5, 70, 20)
@@ -71,7 +71,7 @@ public class CharterScreen extends Screen {
         // "I decline" button - inside the window
         this.declineButton = ButtonWidget.builder(Text.literal(declineButtonText), button -> {
                     // Send decline packet to server instead of disconnecting directly
-                    CharterResponsePacket.sendDeclinePacket();
+                    RulesResponsePacket.sendDeclinePacket();
                 })
                 .dimensions(centerX + 10, bottomY + 5, 70, 20)
                 .build();
@@ -83,7 +83,7 @@ public class CharterScreen extends Screen {
         // Minecraft dirt background (like in menus)
         this.renderBackground(context);
 
-        // Charter window background (dark gray with border)
+        // Rules window background (dark gray with border)
         int windowWidth = this.width - 80;
         int windowHeight = this.height - 80; // Smaller to leave space
         int windowX = 40;
@@ -106,7 +106,7 @@ public class CharterScreen extends Screen {
         context.fill(windowX + 10, titleY - 5, windowX + windowWidth - 10, titleY + 15, 0xFF404040);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, titleY, 0xFFFFFF);
 
-        // Charter content area
+        // Rules content area
         int contentX = windowX + 20;
         int contentY = windowY + 50;
         int contentWidth = windowWidth - 40;
@@ -115,8 +115,8 @@ public class CharterScreen extends Screen {
         // Text area background
         context.fill(contentX - 5, contentY - 5, contentX + contentWidth + 5, contentY + contentHeight + 5, 0xFF1E1E1E);
 
-        // Charter content with scroll
-        String[] lines = charterContent.split("\n");
+        // Rules content with scroll
+        String[] lines = rulesContent.split("\n");
         int lineHeight = 12;
         int maxLines = contentHeight / lineHeight;
 

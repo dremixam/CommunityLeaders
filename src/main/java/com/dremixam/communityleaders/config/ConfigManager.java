@@ -44,12 +44,12 @@ public class ConfigManager {
     private void createDefaultConfig() {
         String defaultConfig = """
                 # Community Leaders Configuration
-                # Configuration for streamer invitation system and charter
+                # Configuration for streamer invitation system and rules
                 
-                # Charter system settings
-                charter:
+                # Rules system settings
+                rules:
                   enabled: true
-                  title: "Server Charter"
+                  title: "Server Rules"
                   content: |
                     Welcome to our community server!
                     
@@ -68,8 +68,8 @@ public class ConfigManager {
                     Thank you for helping maintain a friendly community!
                   accept_button: "I Accept"
                   decline_button: "I Decline"
-                  checkbox_text: "I understand and accept the charter"
-                  decline_message: "You must accept the charter to play on this server."
+                  checkbox_text: "I understand and accept the rules"
+                  decline_message: "You must accept the rules to play on this server."
                 
                 # Customizable messages
                 messages:
@@ -95,9 +95,9 @@ public class ConfigManager {
                   ban_disconnect_message: "You have been banned from the server."
                   ban_error: "Error banning player: %error%"
                   
-                  # Charter system
-                  charter_accepted: "You have accepted the server charter. Welcome!"
-                  charter_sending_error: "Error sending charter: %error%"
+                  # Rules system
+                  rules_accepted: "You have accepted the server rules. Welcome!"
+                  rules_sending_error: "Error sending rules: %error%"
                 """;
 
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
@@ -119,39 +119,111 @@ public class ConfigManager {
         return getMessage(key).replace("%player%", playerName);
     }
 
+    public boolean isRulesEnabled() {
+        // Try rules first, fallback to charter for backward compatibility
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (Boolean) rules.get("enabled");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (Boolean) charter.get("enabled");
+        }
+        return false;
+    }
+
+    public String getRulesTitle() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("title");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("title");
+        }
+        return "Server Rules";
+    }
+
+    public String getRulesContent() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("content");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("content");
+        }
+        return "Please accept the server rules.";
+    }
+
+    public String getRulesAcceptButton() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("accept_button");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("accept_button");
+        }
+        return "I Accept";
+    }
+
+    public String getRulesDeclineButton() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("decline_button");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("decline_button");
+        }
+        return "I Decline";
+    }
+
+    public String getRulesCheckboxText() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("checkbox_text");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("checkbox_text");
+        }
+        return "I understand and accept the rules";
+    }
+
+    public String getRulesDeclineMessage() {
+        if (config.containsKey("rules")) {
+            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
+            return (String) rules.get("decline_message");
+        } else if (config.containsKey("charter")) {
+            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
+            return (String) charter.get("decline_message");
+        }
+        return "You must accept the rules to play on this server.";
+    }
+
+    // Legacy methods for backward compatibility - delegate to Rules methods
     public boolean isCharterEnabled() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (Boolean) charter.get("enabled");
+        return isRulesEnabled();
     }
 
     public String getCharterTitle() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("title");
+        return getRulesTitle();
     }
 
     public String getCharterContent() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("content");
+        return getRulesContent();
     }
 
     public String getCharterAcceptButton() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("accept_button");
+        return getRulesAcceptButton();
     }
 
     public String getCharterDeclineButton() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("decline_button");
+        return getRulesDeclineButton();
     }
 
     public String getCharterCheckboxText() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("checkbox_text");
+        return getRulesCheckboxText();
     }
 
     public String getCharterDeclineMessage() {
-        Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-        return (String) charter.get("decline_message");
+        return getRulesDeclineMessage();
     }
 
     public Path getConfigDirectory() {

@@ -1,7 +1,7 @@
 package com.dremixam.communityleaders.network;
 
 import com.dremixam.communityleaders.config.ConfigManager;
-import com.dremixam.communityleaders.data.CharterManager;
+import com.dremixam.communityleaders.data.RulesManager;
 import com.dremixam.communityleaders.events.PlayerConnectionHandler;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -11,37 +11,37 @@ import net.minecraft.world.GameMode;
 
 public class NetworkHandler {
     private static ConfigManager configManager;
-    private static CharterManager charterManager;
+    private static RulesManager rulesManager;
 
-    public static void initialize(ConfigManager config, CharterManager charter) {
+    public static void initialize(ConfigManager config, RulesManager rules) {
         configManager = config;
-        charterManager = charter;
+        rulesManager = rules;
 
-        // Handler for charter acceptance
-        ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.CHARTER_ACCEPT_ID, (server, player, handler, buf, responseSender) -> {
+        // Handler for rules acceptance
+        ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.RULES_ACCEPT_ID, (server, player, handler, buf, responseSender) -> {
             server.execute(() -> {
                 // Check if the player was waiting
-                if (PlayerConnectionHandler.isAwaitingCharter(player.getUuid())) {
+                if (PlayerConnectionHandler.isAwaitingRules(player.getUuid())) {
                     // Mark acceptance via PlayerConnectionHandler
-                    PlayerConnectionHandler.onCharterAccepted(player.getUuid());
+                    PlayerConnectionHandler.onRulesAccepted(player.getUuid());
 
                     // Restore player to normal mode (exit spectator mode)
                     player.changeGameMode(GameMode.SURVIVAL);
 
                     // Confirmation message
-                    player.sendMessage(Text.literal("§aYou have accepted the server charter. Welcome!"), false);
+                    player.sendMessage(Text.literal("§aYou have accepted the server rules. Welcome!"), false);
                 }
             });
         });
 
-        // Handler for charter decline
-        ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.CHARTER_DECLINE_ID, (server, player, handler, buf, responseSender) -> {
+        // Handler for rules decline
+        ServerPlayNetworking.registerGlobalReceiver(NetworkConstants.RULES_DECLINE_ID, (server, player, handler, buf, responseSender) -> {
             server.execute(() -> {
                 // Mark decline
-                PlayerConnectionHandler.onCharterDeclined(player.getUuid());
+                PlayerConnectionHandler.onRulesDeclined(player.getUuid());
 
                 // Disconnect player with configured message
-                player.networkHandler.disconnect(Text.literal(configManager.getCharterDeclineMessage()));
+                player.networkHandler.disconnect(Text.literal(configManager.getRulesDeclineMessage()));
             });
         });
     }
