@@ -71,4 +71,17 @@ public class InvitationManager {
     public List<UUID> getInvitedPlayers(UUID inviter) {
         return invitations.getOrDefault(inviter, new ArrayList<>());
     }
+
+    public UUID getInviter(UUID invited) {
+        for (Map.Entry<UUID, List<UUID>> entry : invitations.entrySet()) {
+            if (entry.getValue().contains(invited)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    public Map<UUID, List<UUID>> getAllInvitations() {
+        return new ConcurrentHashMap<>(invitations);
+    }
 }

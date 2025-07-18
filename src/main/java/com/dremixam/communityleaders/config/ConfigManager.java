@@ -45,32 +45,15 @@ public class ConfigManager {
         String defaultConfig = """
                 # Community Leaders Configuration
                 # Configuration for streamer invitation system and rules
-                
-                # Rules system settings
-                rules:
-                  enabled: true
-                  title: "§6§lServer Rules"
-                  content: |
-                    §b§lWelcome to our community server!
-                    
-                    §fBy playing on this server, you agree to follow these rules:
-                    
-                    §a1. §fRespect other players and their builds
-                    §a2. §fNo griefing, stealing or intentional destruction
-                    §a3. §fNo offensive language or harassment
-                    §a4. §fRespect protected areas and private properties
-                    §a5. §fNo cheating, hacking or bug exploitation
-                    §a6. §fListen to and respect moderators and administrators
-                    
-                    §c§lBreaking these rules may result in a warning,
-                    §c§ltemporary suspension or permanent ban.
-                    
-                    §e§lThank you for helping maintain a friendly community!
-                  accept_button: "I Accept"
-                  decline_button: "I Decline"
-                  checkbox_text: "I understand and accept the rules"
-                  decline_message: "You must accept the rules to play on this server."
-                
+
+                # Command configuration
+                command:
+                  alias: "cl"  # Alias for /communityleaders command (set to empty string to disable)
+
+                # Invitation limits
+                limits:
+                  max_invitations_per_leader: 5  # Maximum number of players a leader can invite (-1 for unlimited)
+
                 # Customizable messages
                 messages:
                   # General
@@ -81,6 +64,7 @@ public class ConfigManager {
                   invite_success: "Successfully invited '%player%' to the server!"
                   invite_already_whitelisted: "Player '%player%' is already whitelisted."
                   invite_error: "Error inviting player: %error%"
+                  invite_limit_reached: "You have reached your invitation limit (%limit% invitations). You cannot invite more players."
 
                   # Uninvite command
                   uninvite_success: "Successfully uninvited '%player%' from the server."
@@ -95,9 +79,28 @@ public class ConfigManager {
                   ban_disconnect_message: "You have been banned from the server."
                   ban_error: "Error banning player: %error%"
                   
-                  # Rules system
-                  rules_accepted: "You have accepted the server rules. Welcome!"
-                  rules_sending_error: "Error sending rules: %error%"
+                  # List command
+                  list_title: "Players you have invited:"
+                  list_empty: "You haven't invited anyone yet."
+                  list_entry: "- %player%"
+                  
+                  # Tree command
+                  tree_title: "Invitation Tree:"
+                  tree_root: "Root players (not invited by anyone):"
+                  tree_branch: "├── %player%"
+                  tree_last_branch: "└── %player%"
+                  tree_indent: "    "
+                  
+                  # Help messages
+                  help_title: "Community Leaders Commands:"
+                  help_invite: "/cl invite <player> - Invite a player to the server"
+                  help_uninvite: "/cl uninvite <player> - Remove a player you invited"
+                  help_ban: "/cl ban <player> - Ban a player you invited"
+                  help_list: "/cl list - Show players you have invited"
+                  help_tree: "/cl tree - Show the complete invitation tree"
+                  
+                  # Console messages
+                  console_only_players: "This command can only be executed by players, not from console."
                 """;
 
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
@@ -119,131 +122,14 @@ public class ConfigManager {
         return getMessage(key).replace("%player%", playerName);
     }
 
-    public boolean isRulesEnabled() {
-        // Try rules first, fallback to charter for backward compatibility
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (Boolean) rules.get("enabled");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (Boolean) charter.get("enabled");
-        }
-        return false;
+    public String getCommandAlias() {
+        Map<String, Object> command = (Map<String, Object>) config.get("command");
+        return (String) command.get("alias");
     }
 
-    public String getRulesTitle() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("title");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("title");
-        }
-        return "Server Rules";
-    }
-
-    public String getRulesContent() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("content");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("content");
-        }
-        return "Please accept the server rules.";
-    }
-
-    public String getRulesAcceptButton() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("accept_button");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("accept_button");
-        }
-        return "I Accept";
-    }
-
-    public String getRulesDeclineButton() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("decline_button");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("decline_button");
-        }
-        return "I Decline";
-    }
-
-    public String getRulesCheckboxText() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("checkbox_text");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("checkbox_text");
-        }
-        return "I understand and accept the rules";
-    }
-
-    public String getRulesDeclineMessage() {
-        if (config.containsKey("rules")) {
-            Map<String, Object> rules = (Map<String, Object>) config.get("rules");
-            return (String) rules.get("decline_message");
-        } else if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            return (String) charter.get("decline_message");
-        }
-        return "You must accept the rules to play on this server.";
-    }
-
-    public String getRulesAcceptedMessage() {
-        // Check if using new message system
-        if (config.containsKey("messages")) {
-            Map<String, Object> messages = (Map<String, Object>) config.get("messages");
-            if (messages.containsKey("rules_accepted")) {
-                return (String) messages.get("rules_accepted");
-            }
-        }
-
-        // Fallback to old charter system for backward compatibility
-        if (config.containsKey("charter")) {
-            Map<String, Object> charter = (Map<String, Object>) config.get("charter");
-            if (charter.containsKey("accepted")) {
-                return (String) charter.get("accepted");
-            }
-        }
-
-        return "You have accepted the server rules. Welcome!";
-    }
-
-    // Legacy methods for backward compatibility - delegate to Rules methods
-    public boolean isCharterEnabled() {
-        return isRulesEnabled();
-    }
-
-    public String getCharterTitle() {
-        return getRulesTitle();
-    }
-
-    public String getCharterContent() {
-        return getRulesContent();
-    }
-
-    public String getCharterAcceptButton() {
-        return getRulesAcceptButton();
-    }
-
-    public String getCharterDeclineButton() {
-        return getRulesDeclineButton();
-    }
-
-    public String getCharterCheckboxText() {
-        return getRulesCheckboxText();
-    }
-
-    public String getCharterDeclineMessage() {
-        return getRulesDeclineMessage();
+    public int getMaxInvitationsPerLeader() {
+        Map<String, Object> limits = (Map<String, Object>) config.get("limits");
+        return (Integer) limits.get("max_invitations_per_leader");
     }
 
     public Path getConfigDirectory() {

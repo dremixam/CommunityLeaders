@@ -4,9 +4,9 @@
   "version": "${version}",
   "name": "CommunityLeaders",
   "description": "Mod permettant aux streamers de gérer leurs communautés avec des invitations whitelist personnalisées",
-  "authors": ["Dremixam"],
+  "authors": ["DrEmixam"],
   "contact": {},
-  "license": "All-Rights-Reserved",
+  "license": "AGPL-3.0",
   "icon": "assets/communityleaders/icon.png",
   "environment": "*",
   "entrypoints": {
