@@ -84,7 +84,17 @@ public class ListCommand {
                 String playerName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
 
                 String entry = configManager.getMessage("list_entry", playerName);
-                player.sendMessage(Text.literal("§f" + entry), false);
+
+                // Vérifier si le joueur invité est modérateur du leader actuel
+                boolean isModerator = moderatorManager.isModerator(actualLeaderUuid, invitedUuid);
+
+                if (isModerator) {
+                    // Afficher en jaune si c'est un modérateur
+                    player.sendMessage(Text.literal("§e" + entry), false);
+                } else {
+                    // Afficher en blanc si c'est un invité normal
+                    player.sendMessage(Text.literal("§f" + entry), false);
+                }
             }
 
             return 1;
