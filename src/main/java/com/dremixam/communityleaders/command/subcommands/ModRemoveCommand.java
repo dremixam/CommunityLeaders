@@ -26,7 +26,7 @@ public class ModRemoveCommand {
         ServerCommandSource source = context.getSource();
 
         if (!source.isExecutedByPlayer()) {
-            source.sendFeedback(() -> Text.literal("§cCette commande ne peut être utilisée que par des joueurs."), false);
+            source.sendFeedback(() -> Text.literal("§c" + configManager.getMessage("console_only_players")), false);
             return 0;
         }
 
@@ -39,25 +39,24 @@ public class ModRemoveCommand {
 
             var profileOpt = userCache.findByName(playerName);
             if (profileOpt.isEmpty()) {
-                leader.sendMessage(Text.literal("§cJoueur non trouvé: " + playerName), false);
+                leader.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
                 return 0;
             }
 
             GameProfile targetProfile = profileOpt.get();
 
             if (!moderatorManager.isModerator(leader.getUuid(), targetProfile.getId())) {
-                leader.sendMessage(Text.literal("§c" + playerName + " n'est pas votre modérateur."), false);
+                leader.sendMessage(Text.literal("§c" + configManager.getMessage("mod_remove_not_moderator", playerName)), false);
                 return 0;
             }
 
             moderatorManager.removeModerator(leader.getUuid(), targetProfile.getId());
-            leader.sendMessage(Text.literal("§a" + playerName + " a été retiré de vos modérateurs."), false);
+            leader.sendMessage(Text.literal("§a" + configManager.getMessage("mod_remove_success", playerName)), false);
 
             // Notifier le joueur s'il est en ligne et rafraîchir ses commandes
             ServerPlayerEntity targetPlayer = server.getPlayerManager().getPlayer(targetProfile.getId());
             if (targetPlayer != null) {
-                targetPlayer.sendMessage(Text.literal("§eVous n'êtes plus modérateur de " + leader.getName().getString() + "."), false);
-                targetPlayer.sendMessage(Text.literal("§eVos permissions de modérateur ont été révoquées."), false);
+                targetPlayer.sendMessage(Text.literal("§e" + configManager.getMessage("mod_remove_notification").replace("%leader%", leader.getName().getString())), false);
 
                 // Forcer le rafraîchissement des commandes côté client
                 server.getCommandManager().sendCommandTree(targetPlayer);
@@ -65,7 +64,7 @@ public class ModRemoveCommand {
 
             return 1;
         } catch (Exception e) {
-            leader.sendMessage(Text.literal("§cErreur lors de la suppression du modérateur: " + e.getMessage()), false);
+            leader.sendMessage(Text.literal("§c" + configManager.getMessage("mod_remove_error").replace("%error%", e.getMessage())), false);
             return 0;
         }
     }

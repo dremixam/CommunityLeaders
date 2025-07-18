@@ -27,7 +27,7 @@ public class ModListCommand {
         ServerCommandSource source = context.getSource();
 
         if (!source.isExecutedByPlayer()) {
-            source.sendFeedback(() -> Text.literal("§cCette commande ne peut être utilisée que par des joueurs."), false);
+            source.sendFeedback(() -> Text.literal("§c" + configManager.getMessage("console_only_players")), false);
             return 0;
         }
 
@@ -37,11 +37,11 @@ public class ModListCommand {
             List<UUID> moderators = moderatorManager.getModerators(leader.getUuid());
 
             if (moderators.isEmpty()) {
-                leader.sendMessage(Text.literal("§eVous n'avez aucun modérateur."), false);
+                leader.sendMessage(Text.literal("§e" + configManager.getMessage("mod_list_empty")), false);
                 return 0;
             }
 
-            leader.sendMessage(Text.literal("§aVos modérateurs (" + moderators.size() + "):"), false);
+            leader.sendMessage(Text.literal("§a" + configManager.getMessage("mod_list_title")), false);
 
             var server = source.getServer();
             var userCache = server.getUserCache();
@@ -49,12 +49,12 @@ public class ModListCommand {
             for (UUID modUuid : moderators) {
                 var profileOpt = userCache.getByUuid(modUuid);
                 String modName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
-                leader.sendMessage(Text.literal("- " + modName), false);
+                leader.sendMessage(Text.literal("§f" + configManager.getMessage("mod_list_entry", modName)), false);
             }
 
             return 1;
         } catch (Exception e) {
-            leader.sendMessage(Text.literal("§cErreur lors de l'affichage des modérateurs: " + e.getMessage()), false);
+            leader.sendMessage(Text.literal("§c" + configManager.getMessage("mod_list_error").replace("%error%", e.getMessage())), false);
             return 0;
         }
     }

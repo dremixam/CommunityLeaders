@@ -58,7 +58,7 @@ public class ConfigManager {
                 messages:
                   # General
                   player_not_found: "Player '%player%' not found."
-                  no_permission: "You don't have permission to use this command."
+                  console_only_players: "This command can only be executed by players, not from console."
                   
                   # Invite command
                   invite_success: "Successfully invited '%player%' to the server!"
@@ -86,10 +86,26 @@ public class ConfigManager {
                   
                   # Tree command
                   tree_title: "Invitation Tree:"
-                  tree_root: "Root players (not invited by anyone):"
-                  tree_branch: "├── %player%"
-                  tree_last_branch: "└── %player%"
-                  tree_indent: "    "
+                  
+                  # Moderator commands
+                  mod_add_success: "%player% has been added as a moderator."
+                  mod_add_already_moderator: "%player% is already your moderator."
+                  mod_add_moderator_of_other: "%player% is already a moderator of another leader."
+                  mod_add_only_invited: "You can only make moderators from players you have invited."
+                  mod_add_cannot_self: "You cannot make yourself a moderator of yourself."
+                  mod_add_notification: "You have been made a moderator by %leader%!"
+                  mod_add_notification_commands: "You now have access to their leader commands."
+                  mod_add_error: "Error adding moderator: %error%"
+                  
+                  mod_remove_success: "%player% has been removed as a moderator."
+                  mod_remove_not_moderator: "%player% is not your moderator."
+                  mod_remove_notification: "You are no longer a moderator of %leader%."
+                  mod_remove_error: "Error removing moderator: %error%"
+                  
+                  mod_list_title: "Your moderators:"
+                  mod_list_empty: "You don't have any moderators yet."
+                  mod_list_entry: "- %player%"
+                  mod_list_error: "Error displaying moderators: %error%"
                   
                   # Help messages
                   help_title: "Community Leaders Commands:"
@@ -98,9 +114,9 @@ public class ConfigManager {
                   help_ban: "/cl ban <player> - Ban a player you invited"
                   help_list: "/cl list - Show players you have invited"
                   help_tree: "/cl tree - Show the complete invitation tree"
-                  
-                  # Console messages
-                  console_only_players: "This command can only be executed by players, not from console."
+                  help_mod_add: "/cl mod add <player> - Add a moderator"
+                  help_mod_remove: "/cl mod remove <player> - Remove a moderator"
+                  help_mod_list: "/cl mod list - List your moderators"
                 """;
 
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {

@@ -43,6 +43,11 @@ public class HelpCommand {
             if (PermissionUtils.hasPermission(source, "communityleaders.tree")) {
                 player.sendMessage(Text.literal("§f" + configManager.getMessage("help_tree")), false);
             }
+            if (PermissionUtils.hasPermission(source, "communityleaders.moderator")) {
+                player.sendMessage(Text.literal("§f" + configManager.getMessage("help_mod_add")), false);
+                player.sendMessage(Text.literal("§f" + configManager.getMessage("help_mod_remove")), false);
+                player.sendMessage(Text.literal("§f" + configManager.getMessage("help_mod_list")), false);
+            }
         } else {
             // Console
             source.sendFeedback(() -> Text.literal("§a" + configManager.getMessage("help_title")), false);
@@ -51,6 +56,9 @@ public class HelpCommand {
             source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_ban")), false);
             source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_list")), false);
             source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_tree")), false);
+            source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_mod_add")), false);
+            source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_mod_remove")), false);
+            source.sendFeedback(() -> Text.literal("§f" + configManager.getMessage("help_mod_list")), false);
         }
 
         return 1;
