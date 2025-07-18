@@ -241,16 +241,28 @@ public class CommunityLeadersCommand {
             return 0;
         }
 
-        ServerPlayerEntity streamer = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         String playerName = StringArgumentType.getString(context, "player");
 
         try {
             var server = source.getServer();
             var userCache = server.getUserCache();
 
+            // Déterminer qui est le vrai leader (le joueur ou son leader si c'est un modérateur)
+            UUID actualLeaderUuid = player.getUuid();
+            String leaderName = player.getName().getString();
+
+            UUID leaderUuid = moderatorManager.getLeader(player.getUuid());
+            if (leaderUuid != null) {
+                // Le joueur est modérateur, utiliser son leader
+                actualLeaderUuid = leaderUuid;
+                var leaderProfileOpt = userCache.getByUuid(leaderUuid);
+                leaderName = leaderProfileOpt.map(profile -> profile.getName()).orElse("Leader");
+            }
+
             var profileOpt = userCache.findByName(playerName);
             if (profileOpt.isEmpty()) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
                 return 0;
             }
 
@@ -258,20 +270,20 @@ public class CommunityLeadersCommand {
 
             Whitelist whitelist = server.getPlayerManager().getWhitelist();
             if (whitelist.isAllowed(targetProfile)) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("invite_already_whitelisted", playerName)), false);
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("invite_already_whitelisted", playerName)), false);
                 return 0;
             }
 
-            // Vérifier la limite d'invitations (sauf si le joueur a la permission d'override)
+            // Vérifier la limite d'invitations en utilisant le vrai leader
             boolean hasUnlimitedPermission = hasPermission(source, "communityleaders.unlimited");
             if (!hasUnlimitedPermission) {
                 int maxInvitations = configManager.getMaxInvitationsPerLeader();
                 if (maxInvitations != -1) { // -1 = illimité, sinon limite appliquée
-                    int currentInvitations = invitationManager.getInvitedPlayers(streamer.getUuid()).size();
+                    int currentInvitations = invitationManager.getInvitedPlayers(actualLeaderUuid).size();
                     if (currentInvitations >= maxInvitations) {
                         String limitMessage = configManager.getMessage("invite_limit_reached")
                                 .replace("%limit%", String.valueOf(maxInvitations));
-                        streamer.sendMessage(Text.literal("§c" + limitMessage), false);
+                        player.sendMessage(Text.literal("§c" + limitMessage), false);
                         return 0;
                     }
                 }
@@ -280,12 +292,12 @@ public class CommunityLeadersCommand {
             WhitelistEntry entry = new WhitelistEntry(targetProfile);
             whitelist.add(entry);
 
-            invitationManager.addInvitation(streamer.getUuid(), targetProfile.getId());
+            invitationManager.addInvitation(actualLeaderUuid, targetProfile.getId());
 
-            streamer.sendMessage(Text.literal("§a" + configManager.getMessage("invite_success", playerName)), false);
+            player.sendMessage(Text.literal("§a" + configManager.getMessage("invite_success", playerName)), false);
             return 1;
         } catch (Exception e) {
-            streamer.sendMessage(Text.literal("§c" + configManager.getMessage("invite_error").replace("%error%", e.getMessage())), false);
+            player.sendMessage(Text.literal("§c" + configManager.getMessage("invite_error").replace("%error%", e.getMessage())), false);
             return 0;
         }
     }
@@ -300,23 +312,32 @@ public class CommunityLeadersCommand {
             return 0;
         }
 
-        ServerPlayerEntity streamer = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         String playerName = StringArgumentType.getString(context, "player");
 
         try {
             var server = source.getServer();
             var userCache = server.getUserCache();
 
+            // Déterminer qui est le vrai leader (le joueur ou son leader si c'est un modérateur)
+            UUID actualLeaderUuid = player.getUuid();
+
+            UUID leaderUuid = moderatorManager.getLeader(player.getUuid());
+            if (leaderUuid != null) {
+                // Le joueur est modérateur, utiliser son leader
+                actualLeaderUuid = leaderUuid;
+            }
+
             var profileOpt = userCache.findByName(playerName);
             if (profileOpt.isEmpty()) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
                 return 0;
             }
 
             GameProfile targetProfile = profileOpt.get();
 
-            if (!invitationManager.hasInvited(streamer.getUuid(), targetProfile.getId())) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("uninvite_only_invited")), false);
+            if (!invitationManager.hasInvited(actualLeaderUuid, targetProfile.getId())) {
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("uninvite_only_invited")), false);
                 return 0;
             }
 
@@ -328,12 +349,12 @@ public class CommunityLeadersCommand {
             Whitelist whitelist = server.getPlayerManager().getWhitelist();
             whitelist.remove(targetProfile);
 
-            invitationManager.removeInvitation(streamer.getUuid(), targetProfile.getId());
+            invitationManager.removeInvitation(actualLeaderUuid, targetProfile.getId());
 
-            streamer.sendMessage(Text.literal("§a" + configManager.getMessage("uninvite_success", playerName)), false);
+            player.sendMessage(Text.literal("§a" + configManager.getMessage("uninvite_success", playerName)), false);
             return 1;
         } catch (Exception e) {
-            streamer.sendMessage(Text.literal("§c" + configManager.getMessage("uninvite_error").replace("%error%", e.getMessage())), false);
+            player.sendMessage(Text.literal("§c" + configManager.getMessage("uninvite_error").replace("%error%", e.getMessage())), false);
             return 0;
         }
     }
@@ -348,23 +369,32 @@ public class CommunityLeadersCommand {
             return 0;
         }
 
-        ServerPlayerEntity streamer = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         String playerName = StringArgumentType.getString(context, "player");
 
         try {
             var server = source.getServer();
             var userCache = server.getUserCache();
 
+            // Déterminer qui est le vrai leader (le joueur ou son leader si c'est un modérateur)
+            UUID actualLeaderUuid = player.getUuid();
+
+            UUID leaderUuid = moderatorManager.getLeader(player.getUuid());
+            if (leaderUuid != null) {
+                // Le joueur est modérateur, utiliser son leader
+                actualLeaderUuid = leaderUuid;
+            }
+
             var profileOpt = userCache.findByName(playerName);
             if (profileOpt.isEmpty()) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("player_not_found", playerName)), false);
                 return 0;
             }
 
             GameProfile targetProfile = profileOpt.get();
 
-            if (!invitationManager.hasInvited(streamer.getUuid(), targetProfile.getId())) {
-                streamer.sendMessage(Text.literal("§c" + configManager.getMessage("ban_only_invited")), false);
+            if (!invitationManager.hasInvited(actualLeaderUuid, targetProfile.getId())) {
+                player.sendMessage(Text.literal("§c" + configManager.getMessage("ban_only_invited")), false);
                 return 0;
             }
 
@@ -374,18 +404,18 @@ public class CommunityLeadersCommand {
             }
 
             var bannedPlayerList = server.getPlayerManager().getUserBanList();
-            var banEntry = new net.minecraft.server.BannedPlayerEntry(targetProfile, null, streamer.getName().getString(), null, configManager.getMessage("ban_reason"));
+            var banEntry = new net.minecraft.server.BannedPlayerEntry(targetProfile, null, player.getName().getString(), null, configManager.getMessage("ban_reason"));
             bannedPlayerList.add(banEntry);
 
             Whitelist whitelist = server.getPlayerManager().getWhitelist();
             whitelist.remove(targetProfile);
 
-            invitationManager.removeInvitation(streamer.getUuid(), targetProfile.getId());
+            invitationManager.removeInvitation(actualLeaderUuid, targetProfile.getId());
 
-            streamer.sendMessage(Text.literal("§a" + configManager.getMessage("ban_success", playerName)), false);
+            player.sendMessage(Text.literal("§a" + configManager.getMessage("ban_success", playerName)), false);
             return 1;
         } catch (Exception e) {
-            streamer.sendMessage(Text.literal("§c" + configManager.getMessage("ban_error").replace("%error%", e.getMessage())), false);
+            player.sendMessage(Text.literal("§c" + configManager.getMessage("ban_error").replace("%error%", e.getMessage())), false);
             return 0;
         }
     }
@@ -400,14 +430,28 @@ public class CommunityLeadersCommand {
             return 0;
         }
 
-        ServerPlayerEntity streamer = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
 
         try {
-            List<UUID> invitedPlayers = invitationManager.getInvitedPlayers(streamer.getUuid());
+            // Déterminer qui est le vrai leader (le joueur ou son leader si c'est un modérateur)
+            UUID actualLeaderUuid = player.getUuid();
+            String leaderName = player.getName().getString();
+
+            UUID leaderUuid = moderatorManager.getLeader(player.getUuid());
+            if (leaderUuid != null) {
+                // Le joueur est modérateur, utiliser son leader
+                actualLeaderUuid = leaderUuid;
+                var server = source.getServer();
+                var userCache = server.getUserCache();
+                var leaderProfileOpt = userCache.getByUuid(leaderUuid);
+                leaderName = leaderProfileOpt.map(profile -> profile.getName()).orElse("Leader");
+            }
+
+            List<UUID> invitedPlayers = invitationManager.getInvitedPlayers(actualLeaderUuid);
             int currentInvitations = invitedPlayers.size();
 
             // Construire le titre avec le ratio d'invitations
-            String title = configManager.getMessage("list_title");
+            String title = configManager.getMessage("list_title", leaderName);
 
             // Ajouter le ratio si le joueur n'a pas la permission unlimited
             boolean hasUnlimitedPermission = hasPermission(source, "communityleaders.unlimited");
@@ -423,11 +467,11 @@ public class CommunityLeadersCommand {
             }
 
             if (invitedPlayers.isEmpty()) {
-                streamer.sendMessage(Text.literal("§e" + configManager.getMessage("list_empty")), false);
+                player.sendMessage(Text.literal("§e" + configManager.getMessage("list_empty")), false);
                 return 0;
             }
 
-            streamer.sendMessage(Text.literal("§a" + title), false);
+            player.sendMessage(Text.literal("§a" + title), false);
 
             var server = source.getServer();
             var userCache = server.getUserCache();
@@ -436,13 +480,13 @@ public class CommunityLeadersCommand {
                 var profileOpt = userCache.getByUuid(invitedUuid);
                 String playerName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
 
-                String entry = configManager.getMessage("list_entry").replace("%player%", playerName);
-                streamer.sendMessage(Text.literal("§f" + entry), false);
+                String entry = configManager.getMessage("list_entry", playerName);
+                player.sendMessage(Text.literal("§f" + entry), false);
             }
 
             return 1;
         } catch (Exception e) {
-            streamer.sendMessage(Text.literal("§c" + "Error displaying list: " + e.getMessage()), false);
+            player.sendMessage(Text.literal("§c" + "Error displaying list: " + e.getMessage()), false);
             return 0;
         }
     }
@@ -746,7 +790,7 @@ public class CommunityLeadersCommand {
             for (UUID modUuid : moderators) {
                 var profileOpt = userCache.getByUuid(modUuid);
                 String modName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
-                leader.sendMessage(Text.literal("§e- " + modName), false);
+                leader.sendMessage(Text.literal("- " + modName), false);
             }
 
             return 1;

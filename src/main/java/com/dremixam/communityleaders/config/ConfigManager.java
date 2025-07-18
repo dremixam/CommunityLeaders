@@ -80,7 +80,7 @@ public class ConfigManager {
                   ban_error: "Error banning player: %error%"
                   
                   # List command
-                  list_title: "Players you have invited:"
+                  list_title: "Players %player% invited:"
                   list_empty: "You haven't invited anyone yet."
                   list_entry: "- %player%"
                   

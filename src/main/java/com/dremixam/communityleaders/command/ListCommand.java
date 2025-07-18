@@ -76,7 +76,7 @@ public class ListCommand {
                 var profileOpt = userCache.getByUuid(invitedUuid);
                 String playerName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
 
-                String entry = configManager.getMessage("list_entry").replace("%player%", playerName);
+                String entry = configManager.getMessage("list_entry", playerName);
                 streamer.sendMessage(Text.literal("§f" + entry), false);
             }
 
