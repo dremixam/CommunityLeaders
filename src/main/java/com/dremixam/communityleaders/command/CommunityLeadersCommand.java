@@ -2,6 +2,7 @@ package com.dremixam.communityleaders.command;
 
 import com.dremixam.communityleaders.config.ConfigManager;
 import com.dremixam.communityleaders.data.InvitationManager;
+import com.dremixam.communityleaders.data.ModeratorManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -28,14 +29,16 @@ import java.util.stream.Collectors;
 public class CommunityLeadersCommand {
     private static InvitationManager invitationManager;
     private static ConfigManager configManager;
+    private static ModeratorManager moderatorManager;
 
     /**
      * Registers the main command and its alias.
      */
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess,
-                               CommandManager.RegistrationEnvironment environment, InvitationManager invManager, ConfigManager confManager) {
+                               CommandManager.RegistrationEnvironment environment, InvitationManager invManager, ConfigManager confManager, ModeratorManager modManager) {
         invitationManager = invManager;
         configManager = confManager;
+        moderatorManager = modManager;
 
         // Register main command
         registerCommunityleadersCommand(dispatcher);
@@ -68,7 +71,17 @@ public class CommunityLeadersCommand {
                         .executes(CommunityLeadersCommand::executeList))
                 .then(CommandManager.literal("tree")
                         .requires(source -> hasPermission(source, "communityleaders.tree"))
-                        .executes(CommunityLeadersCommand::executeTree)));
+                        .executes(CommunityLeadersCommand::executeTree))
+                .then(CommandManager.literal("mod")
+                        .requires(source -> hasPermission(source, "communityleaders.moderator"))
+                        .then(CommandManager.literal("add")
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(CommunityLeadersCommand::executeModAdd)))
+                        .then(CommandManager.literal("remove")
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(CommunityLeadersCommand::executeModRemove)))
+                        .then(CommandManager.literal("list")
+                                .executes(CommunityLeadersCommand::executeModList))));
     }
 
     private static void registerAliasCommand(CommandDispatcher<ServerCommandSource> dispatcher, String alias) {
@@ -92,7 +105,17 @@ public class CommunityLeadersCommand {
                         .executes(CommunityLeadersCommand::executeList))
                 .then(CommandManager.literal("tree")
                         .requires(source -> hasPermission(source, "communityleaders.tree"))
-                        .executes(CommunityLeadersCommand::executeTree)));
+                        .executes(CommunityLeadersCommand::executeTree))
+                .then(CommandManager.literal("mod")
+                        .requires(source -> hasPermission(source, "communityleaders.moderator", false))
+                        .then(CommandManager.literal("add")
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(CommunityLeadersCommand::executeModAdd)))
+                        .then(CommandManager.literal("remove")
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(CommunityLeadersCommand::executeModRemove)))
+                        .then(CommandManager.literal("list")
+                                .executes(CommunityLeadersCommand::executeModList))));
     }
 
     private static boolean hasAnyPermission(ServerCommandSource source) {
@@ -109,6 +132,10 @@ public class CommunityLeadersCommand {
     }
 
     private static boolean hasPermission(ServerCommandSource source, String permission) {
+        return hasPermission(source, permission, true);
+    }
+
+    private static boolean hasPermission(ServerCommandSource source, String permission, boolean inheritPermissions) {
         // Console peut toujours utiliser les commandes
         if (!source.isExecutedByPlayer()) {
             return true;
@@ -124,7 +151,45 @@ public class CommunityLeadersCommand {
             ServerPlayerEntity player = source.getPlayer();
             LuckPerms luckPerms = LuckPermsProvider.get();
             User user = luckPerms.getPlayerAdapter(ServerPlayerEntity.class).getUser(player);
-            return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+
+            // Vérifier si le joueur a directement la permission
+            if (user.getCachedData().getPermissionData().checkPermission(permission).asBoolean()) {
+                return true;
+            }
+
+            if (inheritPermissions) {
+                // Vérifier si le joueur est modérateur et si son leader a la permission
+                UUID leaderUuid = moderatorManager.getLeader(player.getUuid());
+
+                if (leaderUuid != null) {
+                    var server = source.getServer();
+                    var userCache = server.getUserCache();
+                    var leaderProfileOpt = userCache.getByUuid(leaderUuid);
+
+                    if (leaderProfileOpt.isPresent()) {
+                        // Chercher le leader en ligne pour vérifier ses permissions
+                        ServerPlayerEntity leaderPlayer = server.getPlayerManager().getPlayer(leaderUuid);
+                        if (leaderPlayer != null) {
+                            // Le leader est en ligne, vérifier ses permissions directement
+                            User leaderUser = luckPerms.getPlayerAdapter(ServerPlayerEntity.class).getUser(leaderPlayer);
+                            return leaderUser.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+                        } else {
+                            // Le leader n'est pas en ligne, charger ses données depuis LuckPerms
+                            try {
+                                User leaderUser = luckPerms.getUserManager().loadUser(leaderUuid).get();
+                                if (leaderUser != null) {
+                                    return leaderUser.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+                                }
+                            } catch (Exception e) {
+                                // En cas d'erreur, on refuse l'accès par sécurité
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -534,6 +599,160 @@ public class CommunityLeadersCommand {
                     }
                 }
             }
+        }
+    }
+
+    // Moderator add subcommand - Ajoute un modérateur (seulement parmi les joueurs invités)
+    private static int executeModAdd(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+
+        if (!source.isExecutedByPlayer()) {
+            source.sendFeedback(() -> Text.literal("§cCette commande ne peut être utilisée que par des joueurs."), false);
+            return 0;
+        }
+
+        ServerPlayerEntity leader = source.getPlayer();
+        String playerName = StringArgumentType.getString(context, "player");
+
+        try {
+            var server = source.getServer();
+            var userCache = server.getUserCache();
+
+            var profileOpt = userCache.findByName(playerName);
+            if (profileOpt.isEmpty()) {
+                leader.sendMessage(Text.literal("§cJoueur non trouvé: " + playerName), false);
+                return 0;
+            }
+
+            GameProfile targetProfile = profileOpt.get();
+
+            // Vérifier que le joueur ne peut pas se nommer lui-même modérateur
+            if (targetProfile.getId().equals(leader.getUuid())) {
+                leader.sendMessage(Text.literal("§cVous ne pouvez pas vous nommer modérateur de vous-même."), false);
+                return 0;
+            }
+
+            // RÈGLE IMPORTANTE: Seuls les joueurs invités par ce leader peuvent devenir modérateurs
+            if (!invitationManager.hasInvited(leader.getUuid(), targetProfile.getId())) {
+                leader.sendMessage(Text.literal("§cVous ne pouvez nommer modérateur que les joueurs que vous avez invités."), false);
+                return 0;
+            }
+
+            // Vérifier si le joueur est déjà modérateur de ce leader
+            if (moderatorManager.isModerator(leader.getUuid(), targetProfile.getId())) {
+                leader.sendMessage(Text.literal("§c" + playerName + " est déjà votre modérateur."), false);
+                return 0;
+            }
+
+            // Vérifier si le joueur est modérateur de quelqu'un d'autre
+            if (moderatorManager.isModeratorOfAnyone(targetProfile.getId())) {
+                leader.sendMessage(Text.literal("§c" + playerName + " est déjà modérateur d'un autre leader."), false);
+                return 0;
+            }
+
+            moderatorManager.addModerator(leader.getUuid(), targetProfile.getId());
+            leader.sendMessage(Text.literal("§a" + playerName + " a été ajouté comme modérateur."), false);
+
+            // Notifier le joueur s'il est en ligne et rafraîchir ses commandes
+            ServerPlayerEntity targetPlayer = server.getPlayerManager().getPlayer(targetProfile.getId());
+            if (targetPlayer != null) {
+                targetPlayer.sendMessage(Text.literal("§aVous avez été nommé modérateur par " + leader.getName().getString() + " !"), false);
+                targetPlayer.sendMessage(Text.literal("§eVous avez maintenant accès à ses commandes de leader."), false);
+
+                // Forcer le rafraîchissement des commandes côté client
+                server.getCommandManager().sendCommandTree(targetPlayer);
+            }
+
+            return 1;
+        } catch (Exception e) {
+            leader.sendMessage(Text.literal("§cErreur lors de l'ajout du modérateur: " + e.getMessage()), false);
+            return 0;
+        }
+    }
+
+    // Moderator remove subcommand
+    private static int executeModRemove(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+
+        if (!source.isExecutedByPlayer()) {
+            source.sendFeedback(() -> Text.literal("§cCette commande ne peut être utilisée que par des joueurs."), false);
+            return 0;
+        }
+
+        ServerPlayerEntity leader = source.getPlayer();
+        String playerName = StringArgumentType.getString(context, "player");
+
+        try {
+            var server = source.getServer();
+            var userCache = server.getUserCache();
+
+            var profileOpt = userCache.findByName(playerName);
+            if (profileOpt.isEmpty()) {
+                leader.sendMessage(Text.literal("§cJoueur non trouvé: " + playerName), false);
+                return 0;
+            }
+
+            GameProfile targetProfile = profileOpt.get();
+
+            if (!moderatorManager.isModerator(leader.getUuid(), targetProfile.getId())) {
+                leader.sendMessage(Text.literal("§c" + playerName + " n'est pas votre modérateur."), false);
+                return 0;
+            }
+
+            moderatorManager.removeModerator(leader.getUuid(), targetProfile.getId());
+            leader.sendMessage(Text.literal("§a" + playerName + " a été retiré de vos modérateurs."), false);
+
+            // Notifier le joueur s'il est en ligne et rafraîchir ses commandes
+            ServerPlayerEntity targetPlayer = server.getPlayerManager().getPlayer(targetProfile.getId());
+            if (targetPlayer != null) {
+                targetPlayer.sendMessage(Text.literal("§eVous n'êtes plus modérateur de " + leader.getName().getString() + "."), false);
+                targetPlayer.sendMessage(Text.literal("§eVos permissions de modérateur ont été révoquées."), false);
+
+                // Forcer le rafraîchissement des commandes côté client
+                server.getCommandManager().sendCommandTree(targetPlayer);
+            }
+
+            return 1;
+        } catch (Exception e) {
+            leader.sendMessage(Text.literal("§cErreur lors de la suppression du modérateur: " + e.getMessage()), false);
+            return 0;
+        }
+    }
+
+    // Moderator list subcommand
+    private static int executeModList(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+
+        if (!source.isExecutedByPlayer()) {
+            source.sendFeedback(() -> Text.literal("§cCette commande ne peut être utilisée que par des joueurs."), false);
+            return 0;
+        }
+
+        ServerPlayerEntity leader = source.getPlayer();
+
+        try {
+            List<UUID> moderators = moderatorManager.getModerators(leader.getUuid());
+
+            if (moderators.isEmpty()) {
+                leader.sendMessage(Text.literal("§eVous n'avez aucun modérateur."), false);
+                return 0;
+            }
+
+            leader.sendMessage(Text.literal("§aVos modérateurs (" + moderators.size() + "):"), false);
+
+            var server = source.getServer();
+            var userCache = server.getUserCache();
+
+            for (UUID modUuid : moderators) {
+                var profileOpt = userCache.getByUuid(modUuid);
+                String modName = profileOpt.map(profile -> profile.getName()).orElse("Unknown Player");
+                leader.sendMessage(Text.literal("§e- " + modName), false);
+            }
+
+            return 1;
+        } catch (Exception e) {
+            leader.sendMessage(Text.literal("§cErreur lors de l'affichage des modérateurs: " + e.getMessage()), false);
+            return 0;
         }
     }
 }

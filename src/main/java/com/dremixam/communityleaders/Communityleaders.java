@@ -2,6 +2,7 @@ package com.dremixam.communityleaders;
 
 import com.dremixam.communityleaders.command.CommunityLeadersCommand;
 import com.dremixam.communityleaders.data.InvitationManager;
+import com.dremixam.communityleaders.data.ModeratorManager;
 import com.dremixam.communityleaders.config.ConfigManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -14,6 +15,7 @@ public class Communityleaders implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private ConfigManager configManager;
     private InvitationManager invitationManager;
+    private ModeratorManager moderatorManager;
 
     @Override
     public void onInitialize() {
@@ -35,9 +37,10 @@ public class Communityleaders implements ModInitializer {
 
         configManager = new ConfigManager();
         invitationManager = new InvitationManager(configManager);
+        moderatorManager = new ModeratorManager(configManager);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            CommunityLeadersCommand.register(dispatcher, registryAccess, environment, invitationManager, configManager);
+            CommunityLeadersCommand.register(dispatcher, registryAccess, environment, invitationManager, configManager, moderatorManager);
         });
 
         LOGGER.info("Community Leaders successfully initialized!");
