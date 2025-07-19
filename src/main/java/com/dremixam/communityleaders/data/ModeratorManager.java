@@ -101,9 +101,58 @@ public class ModeratorManager {
     }
 
     /**
-     * Trouve le leader d'un modérateur.
+     * Récupère toutes les relations leader -> modérateurs.
+     * @return Map complète des modérateurs
+     */
+    public Map<UUID, List<UUID>> getAllModerators() {
+        return new ConcurrentHashMap<>(moderators);
+    }
+
+    /**
+     * Vérifie si un joueur est modérateur de n'importe quel leader.
+     * @param moderator UUID du modérateur potentiel
+     * @return true si le joueur est modérateur quelque part
+     */
+    public boolean isModeratorAnywhere(UUID moderator) {
+        for (List<UUID> moderatorList : moderators.values()) {
+            if (moderatorList.contains(moderator)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Supprime un joueur de tous les postes de modérateur.
+     * @param moderator UUID du modérateur à supprimer partout
+     */
+    public void removeModeratorEverywhere(UUID moderator) {
+        boolean changed = false;
+        List<UUID> leadersToClean = new ArrayList<>();
+
+        for (Map.Entry<UUID, List<UUID>> entry : moderators.entrySet()) {
+            if (entry.getValue().remove(moderator)) {
+                changed = true;
+                if (entry.getValue().isEmpty()) {
+                    leadersToClean.add(entry.getKey());
+                }
+            }
+        }
+
+        // Nettoyer les entrées vides
+        for (UUID leader : leadersToClean) {
+            moderators.remove(leader);
+        }
+
+        if (changed) {
+            saveData();
+        }
+    }
+
+    /**
+     * Récupère le leader d'un modérateur.
      * @param moderator UUID du modérateur
-     * @return UUID du leader ou null si le joueur n'est modérateur de personne
+     * @return UUID du leader, ou null si le joueur n'est modérateur de personne
      */
     public UUID getLeader(UUID moderator) {
         for (Map.Entry<UUID, List<UUID>> entry : moderators.entrySet()) {
@@ -115,19 +164,11 @@ public class ModeratorManager {
     }
 
     /**
-     * Vérifie si un joueur est modérateur de quelqu'un.
+     * Alias pour isModeratorAnywhere pour la compatibilité.
      * @param moderator UUID du modérateur potentiel
-     * @return true si le joueur est modérateur d'au moins un leader
+     * @return true si le joueur est modérateur quelque part
      */
     public boolean isModeratorOfAnyone(UUID moderator) {
-        return getLeader(moderator) != null;
-    }
-
-    /**
-     * Récupère tous les modérateurs de tous les leaders.
-     * @return Map complète des modérateurs
-     */
-    public Map<UUID, List<UUID>> getAllModerators() {
-        return new ConcurrentHashMap<>(moderators);
+        return isModeratorAnywhere(moderator);
     }
 }
