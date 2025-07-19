@@ -137,7 +137,7 @@ The mod provides granular permissions that can be assigned individually:
 - **Premium Community Leader**: Add `communityleaders.tree` + `communityleaders.unlimited`
 - **Server Administrator**: Grant all permissions or use wildcard `communityleaders.*`
 
-## Configuration for Administrators
+## Server Configuration
 
 The `config/communityleaders/config.yml` file allows server-wide customization:
 
