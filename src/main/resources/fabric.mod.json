@@ -3,7 +3,7 @@
   "id": "communityleaders",
   "version": "${version}",
   "name": "CommunityLeaders",
-  "description": "Mod permettant aux streamers de gérer leurs communautés avec des invitations whitelist personnalisées",
+  "description": "Mod allowing streamers to manage their communities with custom whitelist invitations",
   "authors": ["DrEmixam"],
   "contact": {},
   "license": "AGPL-3.0",
@@ -34,6 +34,5 @@
     "luckperms": "*"
   },
   "suggests": {
-    "luckperms": "Requis pour la gestion des permissions des streamers"
   }
 }
