@@ -31,13 +31,13 @@ public class HelpCommand {
             if (PermissionUtils.hasPermission(source, "communityleaders.invite")) {
                 player.sendMessage(Text.literal("§f" + configManager.getMessage("help_invite")), false);
             }
-            if (PermissionUtils.hasPermission(source, "communityleaders.uninvite")) {
+            if (PermissionUtils.hasPermission(source, "communityleaders.invite")) {
                 player.sendMessage(Text.literal("§f" + configManager.getMessage("help_uninvite")), false);
             }
             if (PermissionUtils.hasPermission(source, "communityleaders.ban")) {
                 player.sendMessage(Text.literal("§f" + configManager.getMessage("help_ban")), false);
             }
-            if (PermissionUtils.hasPermission(source, "communityleaders.list")) {
+            if (PermissionUtils.hasPermission(source, "communityleaders.invite")) {
                 player.sendMessage(Text.literal("§f" + configManager.getMessage("help_list")), false);
             }
             if (PermissionUtils.hasPermission(source, "communityleaders.tree")) {

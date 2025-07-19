@@ -1,35 +1,55 @@
 # Community Leaders Mod for Minecraft Fabric
 
-**Community Leaders** is a Minecraft Fabric mod designed to help streamers and community leaders easily manage their servers by inviting, uninviting, and banning members of their community. The mod works with the LuckPerms permission management system.
+**Community Leaders** is a Minecraft Fabric mod designed to help **server administrators** delegate community management to trusted **community leaders**. Server admins can grant invitation permissions to streamers, content creators, or community managers, who can then manage their own communities on the server and delegate moderation tasks to their trusted members.
+
+## Concept
+
+The mod creates a **three-tier management hierarchy**:
+
+1. **Server Administrators** → Grant invitation permissions to trusted community leaders
+2. **Community Leaders** → Manage their own community members and assign moderators  
+3. **Moderators** → Help leaders manage their communities with delegated permissions
+
+This system allows server admins to scale their community management by empowering trusted leaders while maintaining oversight and control.
 
 ## Features
 
-### Invitation Management
-- **Personalized invitations**: Streamers can invite specific players to their server
-- **Integrated whitelist system**: Automatically adds invited players to the whitelist
-- **Traceability**: Tracks who invited whom for better control
+### Administrative Delegation
+- **Permission-based leadership**: Admins grant `communityleaders.invite` permission to trusted community leaders
+- **Autonomous community management**: Leaders can independently invite and manage their community members
+- **Scalable server growth**: Support multiple communities on a single server without admin micromanagement
+- **Maintained oversight**: All actions are tracked and can be audited by server administrators
 
-### Member Management
-- **Uninvite**: Removes a player from the whitelist and disconnects them from the server
-- **Ban**: Permanently bans a player invited by the streamer
-- **Access control**: Only streamers can manage their own invited players
+### Community Management
+- **Personalized invitations**: Community leaders can invite their followers, subscribers, or community members
+- **Integrated whitelist system**: Automatically manages server whitelist for invited players
+- **Invitation limits**: Configurable limits per leader (with admin override capability)
+- **Member lifecycle management**: Full control over invitation, removal, and banning of community members
 
-### Rules System
-- **Custom rules screen**: Automatically displays server rules to new players
-- **Mandatory validation**: Players must accept the rules to play
-- **Graphical interface**: Screen with scrolling, checkbox, and customizable buttons
+### Moderation Delegation
+- **Trusted moderator system**: Leaders can delegate permissions to trusted community members
+- **Hierarchical management**: Moderators act on behalf of their assigned leader
+- **Automatic validation**: System ensures moderators don't gain conflicting permissions
+- **Flexible delegation**: Leaders can add/remove moderators as their community evolves
+
+### Advanced Administrative Tools
+- **Invitation tree visualization**: Server admins can view the complete community structure
+- **Data consistency monitoring**: Automatic validation and cleanup of permission relationships
+- **Real-time synchronization**: Integration with LuckPerms for instant permission updates
+- **Command customization**: Configurable aliases and messages for server branding
 
 ### Security and Permissions
-- **LuckPerms integration**: Uses LuckPerms for permission management
-- **Granular permissions**: Precise control over authorized actions
-- **Rights validation**: Automatic verification of permissions before each action
+- **LuckPerms integration**: Leverages enterprise-grade permission management
+- **Granular access control**: Fine-tuned permissions for each management level
+- **Automatic validation**: Real-time verification of permissions and relationships
+- **Consistency enforcement**: Automatic cleanup of invalid data when permissions change
 
 ## Requirements
 
 - **Minecraft**: Version 1.20.1
-- **Fabric Loader**: Recent version
-- **Fabric API**: Included with the mod
-- **LuckPerms**: Required for permission management
+- **Fabric Loader**: Version 0.16.14+
+- **Fabric API**: Version 0.92.6+1.20.1
+- **LuckPerms**: Version 5.4+ (Required for permission management)
 
 ## Installation
 
@@ -45,117 +65,206 @@
    - The mod will configure itself automatically on first startup
    - Configuration files will be created in `config/communityleaders/`
 
-## Configuration
+## Setup Guide for Server Administrators
 
-### Permission Setup
+### 1. Create Community Leader Groups
 
-Create a group for your streamers in LuckPerms:
+Set up different tiers of community leaders in LuckPerms:
 
 ```bash
-# Create the streamer group
-/lp creategroup streamer
+# Create community leader groups
+/lp creategroup community_leader
+/lp creategroup premium_leader
 
-# Set permissions for the streamer group
-/lp group streamer permission set communityleaders.invite true
-/lp group streamer permission set communityleaders.uninvite true
-/lp group streamer permission set communityleaders.ban true
+# Basic community leader permissions
+/lp group community_leader permission set communityleaders.invite true
+/lp group community_leader permission set communityleaders.ban true
+/lp group community_leader permission set communityleaders.moderator true
 
-# Assign the streamer group to a user
-/lp user <streamer_name> parent add streamer
+# Premium leaders get additional permissions
+/lp group premium_leader parent add community_leader
+/lp group premium_leader permission set communityleaders.tree true
+/lp group premium_leader permission set communityleaders.unlimited true
+
+# Assign leadership to trusted community members
+/lp user <streamer_name> parent add community_leader
+/lp user <premium_creator> parent add premium_leader
 ```
 
-### Mod Configuration
+### 2. Server Administrator Permissions
 
-The `config/communityleaders/config.yml` file allows you to customize:
+For full server oversight, admins should have all permissions. Server operators automatically have full access, but you can explicitly set permissions for the admin group:
 
-#### Rules System
-```yaml
-rules:
-  enabled: true
-  title: "§6§lServer Rules"
-  content: |
-    §b§lWelcome to our community server!
-    
-    §fBy playing on this server, you agree to follow these rules:
-    
-    §a1. §fRespect other players and their builds
-    §a2. §fNo griefing, stealing or intentional destruction
-    §a3. §fNo offensive language or harassment
-    §a4. §fRespect protected areas and private properties
-    §a5. §fNo cheating, hacking or bug exploitation
-    §a6. §fListen to and respect moderators and administrators
-    
-    §c§lBreaking these rules may result in a warning,
-    §c§ltemporary suspension or permanent ban.
-    
-    §e§lThank you for helping maintain a friendly community!
-  accept_button: "I Accept"
-  decline_button: "I Decline"
-  checkbox_text: "I understand and accept the rules"
-  decline_message: "You must accept the rules to play on this server."
+```bash
+# Grant admin full access (optional - admins usually have * permission)
+/lp group admin permission set communityleaders.* true
 ```
 
-#### Custom Messages
+### Available Permissions
+
+The mod provides granular permissions that can be assigned individually:
+
+**`communityleaders.invite`**
+- Allows inviting players to the server via `/cl invite`
+- Allows uninviting players you invited via `/cl uninvite`
+- Allows viewing your invitation list via `/cl list`
+- Subject to invitation limits (unless `communityleaders.unlimited` is also granted)
+
+**`communityleaders.ban`**
+- Allows permanently banning players you invited via `/cl ban`
+- Banned players are disconnected, added to server ban list, and removed from whitelist
+- Can only ban players you personally invited
+
+**`communityleaders.tree`**
+- Allows viewing the complete server invitation structure via `/cl tree`
+- Shows all leaders and their invited communities
+- Useful for server administrators and premium community leaders
+
+**`communityleaders.moderator`**
+- Allows managing moderators via `/cl mod add/remove/list`
+- Can promote invited players to moderator status
+- Moderators can use leader commands on behalf of their assigned leader
+- Includes automatic validation to prevent permission conflicts
+
+**`communityleaders.unlimited`**
+- Bypasses invitation limits set in configuration
+- Allows unlimited invitations regardless of `max_invitations_per_leader` setting
+- Typically granted to trusted premium leaders or server staff
+
+**Permission Combinations:**
+- **Basic Community Leader**: `communityleaders.invite` + `communityleaders.ban`
+- **Advanced Community Leader**: Add `communityleaders.moderator`
+- **Premium Community Leader**: Add `communityleaders.tree` + `communityleaders.unlimited`
+- **Server Administrator**: Grant all permissions or use wildcard `communityleaders.*`
+
+## Configuration for Administrators
+
+The `config/communityleaders/config.yml` file allows server-wide customization:
+
 ```yaml
+# Community Leaders Configuration
+# Administrative settings for community delegation system
+
+# Command configuration
+command:
+  alias: "cl"  # Alias for /communityleaders command (customize for your server)
+
+# Community management limits
+limits:
+  max_invitations_per_leader: 10  # Default limit per leader (-1 for unlimited)
+  # Note: Leaders with 'communityleaders.unlimited' permission bypass this limit
+
+# Server branding - customize all messages
 messages:
-  invite_success: "Successfully invited '%player%' to the server!"
-  uninvite_success: "Successfully uninvited '%player%' from the server."
-  ban_success: "Successfully banned '%player%' from the server."
-  player_not_found: "Player '%player%' not found."
-  # ... and many other customizable messages
+  # Customize all messages to match your server's tone and language
+  invite_success: "Welcome to our community! '%player%' has been invited by their community leader."
+  ban_reason: "Community guidelines violation - banned by community leader."
+  # ... (all other messages can be customized)
 ```
 
-## Usage
+## Usage for Community Leaders
 
-### Available Commands
+Community leaders use the mod to manage their own communities within the server:
 
-#### `/invite <player_name>`
-Invites a player to the server by adding them to the whitelist.
+### Core Management Commands
 
-**Required permissions**: `communityleaders.invite`
+The mod provides two command formats:
+- Full command: `/communityleaders <subcommand>`
+- Server alias: `/cl <subcommand>` (configurable by admins)
 
-**Example**:
+#### Member Invitation and Management
+
+- `/cl invite <player>` - Invite a community member to the server
+- `/cl uninvite <player>` - Remove a community member you invited
+- `/cl ban <player>` - Permanently ban a community member you invited
+- `/cl list` - View all members you've invited to the server
+
+#### Moderation Delegation
+
+- `/cl mod add <player>` - Promote an invited member to moderator for your community
+- `/cl mod remove <player>` - Remove moderator status from a member  
+- `/cl mod list` - View all your current moderators
+
+#### Community Overview
+
+- `/cl tree` - View the complete community structure
+
+### How Moderation Works
+
+1. **Leader invites community members** using `/cl invite`
+2. **Leader promotes trusted members** to moderators using `/cl mod add`
+3. **Moderators can then manage the leader's community** using the same commands
+4. **All actions are attributed to the leader** for administrative tracking
+
+## Administrative Tools
+
+### Monitoring Community Growth
+
+Server administrators can monitor community development:
+
 ```bash
-/invite Steve
+# View complete server community structure
+/cl tree
+
+# Check specific leader's community
+/lp user <leader> info
 ```
 
-#### `/uninvite <player_name>`
-Uninvites a player you invited, removes them from the whitelist and disconnects them.
+### Data Storage and Backup
 
-**Required permissions**: `communityleaders.uninvite`
+The mod stores community data in JSON files for easy administration:
 
-**Restrictions**: You can only uninvite players you invited yourself.
+- `config/communityleaders/config.yml` - Server configuration
+- `config/communityleaders/invites.json` - Community invitation relationships  
+- `config/communityleaders/moderators.json` - Moderation delegation structure
 
-**Example**:
-```bash
-/uninvite Steve
-```
+**Admin Tip**: Regularly backup these files to preserve community structures.
 
-#### `/kickban <player_name>`
-Permanently bans a player you invited.
+### Automated Consistency Management
 
-**Required permissions**: `communityleaders.ban`
+The mod automatically maintains data integrity:
 
-**Restrictions**: You can only ban players you invited yourself.
+- **Permission synchronization**: When leaders lose permissions, their communities are cleaned up
+- **Moderation validation**: Moderators who gain leader permissions are automatically managed
+- **Real-time updates**: Changes via LuckPerms are immediately reflected in community structures
+- **Startup validation**: Complete consistency check on each server restart
 
-**Example**:
-```bash
-/kickban Steve
-```
+## Troubleshooting for Administrators
 
-### Rules System
+### Common Setup Issues
 
-When a new player connects to the server:
+1. **"LuckPerms not found" warning**:
+   - Ensure LuckPerms loads before Community Leaders
+   - Verify LuckPerms is properly configured
 
-1. **Automatic display**: The rules screen appears automatically
-2. **Mandatory reading**: The player must scroll to the bottom
-3. **Validation**: A checkbox becomes available after complete reading
-4. **Acceptance**: The player must check the box and click "I Accept"
-5. **Memory**: Acceptance is saved, no need to re-validate
+2. **Community leaders can't use commands**:
+   - Check LuckPerms permission assignments: `/lp user <leader> permission check communityleaders.invite`
+   - Verify group inheritance: `/lp user <leader> info`
+
+3. **Whitelist integration issues**:
+   - Enable server whitelist for best results: `/whitelist on`
+   - The mod automatically manages whitelist entries for invited players
+
+### Performance Considerations
+
+- **Invitation limits**: Set reasonable limits to prevent server overload
+- **Regular cleanup**: The mod automatically cleans up invalid relationships
+- **Monitoring**: Check server logs for consistency check results
+
+## Migration and Integration
+
+### From Other Whitelist Systems
+
+The mod can work alongside existing whitelist management:
+1. Existing whitelist entries are preserved
+2. Community Leaders only manages entries it creates
+3. Admins retain full whitelist control
+
+## Support for Server Administrators
 
 ## License
 
-This project is under "All Rights Reserved" license. All rights reserved to the author.
+This project is licensed under AGPL-3.0.
 
 ## Author
 
@@ -163,8 +272,4 @@ This project is under "All Rights Reserved" license. All rights reserved to the 
 
 ## Support
 
-To report bugs or request features, please create an issue on the project repository.
-
----
-
-*Community Leaders - Manage your Minecraft community easily!*
+For server setup assistance or bug reports, create an issue on the project repository.

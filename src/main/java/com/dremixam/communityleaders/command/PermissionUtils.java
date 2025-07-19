@@ -23,9 +23,7 @@ public class PermissionUtils {
         }
 
         return hasPermission(source, "communityleaders.invite") ||
-               hasPermission(source, "communityleaders.uninvite") ||
                hasPermission(source, "communityleaders.ban") ||
-               hasPermission(source, "communityleaders.list") ||
                hasPermission(source, "communityleaders.tree");
     }
 
