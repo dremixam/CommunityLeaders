@@ -58,7 +58,7 @@ This system allows server admins to scale their community management by empoweri
    - Download [LuckPerms for Fabric](https://luckperms.net/)
 
 2. **Install the mod**:
-   - Place the `CommunityLeaders-1.0-SNAPSHOT.jar` file in the `mods/` folder
+   - Place the `CommunityLeaders-1.x.x.jar` file in the `mods/` folder
    - Also place LuckPerms in the `mods/` folder
 
 3. **Start the server**:

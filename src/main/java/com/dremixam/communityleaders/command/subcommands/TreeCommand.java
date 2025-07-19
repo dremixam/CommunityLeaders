@@ -184,12 +184,15 @@ public class TreeCommand {
         // Vérifier si le joueur est opérateur
         boolean isOperator = isPlayerOperator(streamer.getServer(), playerUuid);
 
+        // Vérifier si le joueur a la permission minecraft.command.ban
+        boolean hasBanPermission = hasBanPermission(streamer.getServer(), playerUuid);
+
         // Vérifier si le joueur a la permission d'inviter (en ligne ou hors ligne)
         boolean canInvite = hasInvitePermission(streamer.getServer(), playerUuid);
 
-        // Priorité : opérateur > permission d'inviter > modérateur
-        if (isOperator) {
-            displayName = "§c" + playerName + "§f"; // Rouge pour les opérateurs
+        // Priorité : opérateur ou permission ban > permission d'inviter > modérateur
+        if (isOperator || hasBanPermission) {
+            displayName = "§c" + playerName + "§f"; // Rouge pour les opérateurs et ceux qui peuvent ban
         } else if (canInvite) {
             displayName = "§d" + playerName + "§f"; // Violet pour ceux qui peuvent inviter
         } else if (moderatorManager.isModeratorOfAnyone(playerUuid)) {
@@ -215,11 +218,12 @@ public class TreeCommand {
                 // Vérifier les statuts de l'enfant (en ligne ou hors ligne)
                 String childDisplayName = childPlayerName;
                 boolean childIsOperator = isPlayerOperator(streamer.getServer(), invitedUuid);
+                boolean childHasBanPermission = hasBanPermission(streamer.getServer(), invitedUuid);
                 boolean childCanInvite = hasInvitePermission(streamer.getServer(), invitedUuid);
 
-                // Priorité : opérateur > permission d'inviter > modérateur
-                if (childIsOperator) {
-                    childDisplayName = "§c" + childPlayerName + "§f"; // Rouge pour les opérateurs
+                // Priorité : opérateur ou permission ban > permission d'inviter > modérateur
+                if (childIsOperator || childHasBanPermission) {
+                    childDisplayName = "§c" + childPlayerName + "§f"; // Rouge pour les opérateurs et ceux qui peuvent ban
                 } else if (childCanInvite) {
                     childDisplayName = "§d" + childPlayerName + "§f"; // Violet pour ceux qui peuvent inviter
                 } else if (moderatorManager.isModeratorOfAnyone(invitedUuid)) {
@@ -257,12 +261,15 @@ public class TreeCommand {
         // Vérifier si le joueur est opérateur
         boolean isOperator = isPlayerOperator(source.getServer(), playerUuid);
 
+        // Vérifier si le joueur a la permission minecraft.command.ban
+        boolean hasBanPermission = hasBanPermission(source.getServer(), playerUuid);
+
         // Vérifier si le joueur a la permission d'inviter (en ligne ou hors ligne)
         boolean canInvite = hasInvitePermission(source.getServer(), playerUuid);
 
-        // Priorité : opérateur > permission d'inviter > modérateur
-        if (isOperator) {
-            displayName = "♛ " + playerName; // Symbole reine pour les opérateurs
+        // Priorité : opérateur ou permission ban > permission d'inviter > modérateur
+        if (isOperator || hasBanPermission) {
+            displayName = "♛ " + playerName; // Symbole reine pour les opérateurs et ceux qui peuvent ban
         } else if (canInvite) {
             displayName = "♚ " + playerName; // Symbole roi pour ceux qui peuvent inviter
         } else if (moderatorManager.isModeratorOfAnyone(playerUuid)) {
@@ -289,11 +296,12 @@ public class TreeCommand {
                 // Vérifier les statuts de l'enfant (en ligne ou hors ligne)
                 String childDisplayName = childPlayerName;
                 boolean childIsOperator = isPlayerOperator(source.getServer(), invitedUuid);
+                boolean childHasBanPermission = hasBanPermission(source.getServer(), invitedUuid);
                 boolean childCanInvite = hasInvitePermission(source.getServer(), invitedUuid);
 
-                // Priorité : opérateur > permission d'inviter > modérateur
-                if (childIsOperator) {
-                    childDisplayName = "♛ " + childPlayerName; // Symbole reine pour les opérateurs
+                // Priorité : opérateur ou permission ban > permission d'inviter > modérateur
+                if (childIsOperator || childHasBanPermission) {
+                    childDisplayName = "♛ " + childPlayerName; // Symbole reine pour les opérateurs et ceux qui peuvent ban
                 } else if (childCanInvite) {
                     childDisplayName = "♚ " + childPlayerName; // Symbole roi pour ceux qui peuvent inviter
                 } else if (moderatorManager.isModeratorOfAnyone(invitedUuid)) {
@@ -357,6 +365,35 @@ public class TreeCommand {
             User user = luckPerms.getUserManager().loadUser(playerUuid).get();
             if (user != null) {
                 return user.getCachedData().getPermissionData().checkPermission("communityleaders.invite").asBoolean();
+            }
+
+            return false;
+        } catch (Exception e) {
+            // En cas d'erreur, considérer que le joueur n'a pas la permission
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie si un joueur a la permission de bannir, même s'il n'est pas connecté
+     * @param server Le serveur Minecraft
+     * @param playerUuid L'UUID du joueur à vérifier
+     * @return true si le joueur a la permission minecraft.command.ban
+     */
+    private static boolean hasBanPermission(MinecraftServer server, UUID playerUuid) {
+        try {
+            // D'abord vérifier si le joueur est en ligne
+            ServerPlayerEntity onlinePlayer = server.getPlayerManager().getPlayer(playerUuid);
+            if (onlinePlayer != null) {
+                // Si le joueur est en ligne, utiliser la méthode normale
+                return PermissionUtils.hasPermission(onlinePlayer.getCommandSource(), "minecraft.command.ban");
+            }
+
+            // Si le joueur est hors ligne, utiliser LuckPerms directement
+            LuckPerms luckPerms = LuckPermsProvider.get();
+            User user = luckPerms.getUserManager().loadUser(playerUuid).get();
+            if (user != null) {
+                return user.getCachedData().getPermissionData().checkPermission("minecraft.command.ban").asBoolean();
             }
 
             return false;
