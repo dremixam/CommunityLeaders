@@ -35,30 +35,12 @@ public class ConsistencyChecker {
     }
 
     /**
-     * Vérifie si un joueur a la permission d'inviter via LuckPerms
+     * Vérifie si un joueur a la permission d'inviter via LuckPerms (directe uniquement)
      */
     private boolean hasInvitePermission(UUID playerUuid) {
         try {
-            LuckPerms luckPerms = LuckPermsProvider.get();
-
-            // Essayer d'abord de récupérer l'utilisateur en ligne
-            User user = luckPerms.getUserManager().getUser(playerUuid);
-
-            // Si l'utilisateur n'est pas en ligne, le charger depuis la base de données
-            if (user == null) {
-                try {
-                    user = luckPerms.getUserManager().loadUser(playerUuid).get();
-                } catch (Exception e) {
-                    LOGGER.warn("Failed to load user data for " + playerUuid, e);
-                    return false;
-                }
-            }
-
-            if (user == null) {
-                return false;
-            }
-
-            return user.getCachedData().getPermissionData().checkPermission("communityleaders.invite").asBoolean();
+            // Utilise PermissionUtils pour vérifier la permission directe (sans héritage)
+            return com.dremixam.communityleaders.command.PermissionUtils.hasPermission(playerUuid, "communityleaders.invite", false);
         } catch (Exception e) {
             LOGGER.warn("Error checking permissions for " + playerUuid, e);
             return false;
@@ -77,13 +59,10 @@ public class ConsistencyChecker {
         // 1. Vérifier les modérateurs qui ont des permissions d'inviter
         checkModeratorsWithInvitePermission();
 
-        // 2. Vérifier les joueurs invités qui sont aussi modérateurs
-        checkInvitedModerators();
-
-        // 3. Vérifier les invitations de leaders sans permission d'inviter
+        // 2. Vérifier les invitations de leaders sans permission d'inviter
         checkInvalidInvitations();
 
-        // 4. Vérifier que les modérateurs ont bien été invités par leur leader
+        // 3. Vérifier que les modérateurs ont bien été invités par leur leader
         checkModeratorsNotInvitedByLeader();
 
         LOGGER.info("Consistency checks completed.");
@@ -122,26 +101,6 @@ public class ConsistencyChecker {
                 if (hasInvitePermission(moderator)) {
                     LOGGER.info("Removing moderator status from " + moderator + " (has invite permission)");
                     moderatorManager.removeModerator(leader, moderator);
-                }
-            }
-        }
-    }
-
-    /**
-     * Vérifie et corrige les joueurs invités qui sont aussi modérateurs
-     */
-    private void checkInvitedModerators() {
-        Map<UUID, List<UUID>> allInvitations = invitationManager.getAllInvitations();
-
-        for (Map.Entry<UUID, List<UUID>> entry : allInvitations.entrySet()) {
-            UUID leader = entry.getKey();
-            List<UUID> invited = new ArrayList<>(entry.getValue());
-
-            for (UUID invitedPlayer : invited) {
-                // Vérifier si ce joueur invité est modérateur de n'importe qui
-                if (moderatorManager.isModeratorAnywhere(invitedPlayer)) {
-                    LOGGER.info("Removing invitation link for " + invitedPlayer + " (is a moderator)");
-                    invitationManager.removeInvitation(leader, invitedPlayer);
                 }
             }
         }
